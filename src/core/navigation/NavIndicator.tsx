@@ -49,7 +49,7 @@
  * computes the offset and the mark is correct on its first paint, including on the web where the
  * first paint is what a page-load screenshot captures.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -110,9 +110,15 @@ export function NavIndicator({ axis, offset }: NavIndicatorProps) {
   //
   // `useAnimatedValue` would read better and is in React Native's TypeScript types — but it is absent
   // from `react-native-web` 0.21, so the call type-checks and then throws `is not a function` in the
-  // browser, taking the whole tab bar down with it. A ref-held `Animated.Value` is the same object on
-  // every platform.
-  const position = useRef(new Animated.Value(offset)).current;
+  // browser, taking the whole tab bar down with it.
+  //
+  // `useState` with no setter rather than `useRef(...).current`, because `react-hooks/refs` rejects
+  // reading `.current` during render and is right to in general — a ref read in render is invisible to
+  // React. Here the value is a mutable object that is never *replaced*, only mutated by the animation,
+  // so state's guarantee that the identity is stable across renders is exactly the guarantee wanted.
+  // The lazy initialiser also matters: `useRef(new Animated.Value(offset))` constructs a throwaway
+  // `Animated.Value` on every render, and this constructs one.
+  const [position] = useState(() => new Animated.Value(offset));
 
   useEffect(() => {
     if (reducedMotion) {

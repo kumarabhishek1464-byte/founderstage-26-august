@@ -46,7 +46,8 @@ const URL_PATTERN = /^(?:https?:\/\/)?[^\s.]+\.[^\s]{2,}$/u;
 const LINKEDIN_PATTERN = /linkedin\.com\/\S+/iu;
 
 /** A URL on either domain, or a bare `@handle` — the two things people mean by "my Twitter". */
-const TWITTER_PATTERN = /^(?:(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\/\S+|@?[A-Za-z0-9_]{1,15})$/u;
+const TWITTER_PATTERN =
+  /^(?:(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\/\S+|@?[A-Za-z0-9_]{1,15})$/u;
 
 function isTenDigits(value: string): boolean {
   return value.replace(DIGITS, '').length === MOBILE_LENGTH;

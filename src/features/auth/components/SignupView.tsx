@@ -1,32 +1,5 @@
 /**
- * `SignupView` — email, a password typed twice, and an explicit agreement.
- *
- * ## Why the terms are a checkbox here and a sentence on the welcome screen
- *
- * `WelcomeView` carries [`LegalNote`](./LegalNote.tsx): "by proceeding, you agree" — *implied* consent,
- * which is all a screen with no account creation on it can claim. This screen creates the account, so the
- * consent is explicit and it is a control the user has to set. Adding the implied-consent line underneath
- * as well would be saying the same thing twice, in two strengths, one of which is now false.
- *
- * [`Checkbox`](../../../core/design-system/components/Checkbox.tsx) refuses a `ReactNode` label because
- * nesting a link inside a checkbox is a broken control, and points at this screen to render "a short label
- * and the linked sentence beneath". There is no `/legal/terms` route to link to yet, so the label carries
- * the whole phrase and there is no second line; when those routes exist, the label shortens to "I agree to
- * the terms" and the linked sentence appears below it, exactly as that docblock describes.
- *
- * ## Why the password rule is a helper and not an error
- *
- * The rule is stated under the field *before* the user types, as `helper` with a shield glyph. A rule the
- * user only meets as a red error after failing it is a rule the interface withheld — and since the same
- * sentence is the schema's message
- * ([`PASSWORD_RULE_HINT`](../model/schemas.ts)), the advice and the complaint are guaranteed to be the
- * same words rather than two paraphrases of one policy.
- *
- * ## What is deliberately missing
- *
- * No account is created. `onSubmit` is a prop and it is navigation until `src/core/auth` and this
- * feature's `api/repository.ts` exist; a component cannot reach the Supabase client at all
- * ([ADR-0011](../../../../docs/adr/0011-repository-pattern.md)).
+ * `SignupView` — email, password, confirmation, terms checkbox matching reference screen 3.
  */
 import { useCallback, useState } from 'react';
 import { Controller } from 'react-hook-form';
@@ -35,6 +8,8 @@ import {
   Banner,
   Button,
   Checkbox,
+  createStyles,
+  GoogleIcon,
   Stack,
   Text,
   TextField,
@@ -55,7 +30,15 @@ interface SignupViewProps {
 
 const GOOGLE_NOTICE = 'Signing up with Google is not available in this build yet.';
 
+const useStyles = createStyles((t) => ({
+  googleButton: {
+    backgroundColor: t.colors.surface.primary,
+    borderColor: t.colors.border.subtle,
+  },
+}));
+
 export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
+  const styles = useStyles();
   const { control, isValid, isSubmitting, submit } = useSignupForm(onSubmit);
 
   const [notice, setNotice] = useState<string | undefined>(undefined);
@@ -65,15 +48,17 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
 
   return (
     <Stack gap="xl2">
-      <Wordmark />
+      <Stack gap="xl">
+        <Wordmark />
 
-      <Stack gap="xxs">
-        <Text variant="title1" tone="heading">
-          Create your account
-        </Text>
-        <Text variant="body" tone="secondary">
-          Join a curated network of founders, investors and operators.
-        </Text>
+        <Stack gap="xxs">
+          <Text variant="title1" tone="heading">
+            Create your account
+          </Text>
+          <Text variant="title2" tone="tertiary">
+            to join the network
+          </Text>
+        </Stack>
       </Stack>
 
       {notice === undefined ? null : <Banner tone="info" message={notice} />}
@@ -84,13 +69,13 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
           name="email"
           render={({ field, fieldState }) => (
             <TextField
-              label="Email"
+              label="Email address"
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={fieldState.error?.message}
               icon="email"
-              placeholder="you@company.com"
+              placeholder="you@example.com"
               keyboardType="email"
               autofill="email"
               autoCapitalize="none"
@@ -111,12 +96,8 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
               icon="password"
               placeholder="Create a password"
               helper={PASSWORD_RULE_HINT}
-              // `verified` is the shield-with-a-check. A password *rule* is a reassurance, not a status,
-              // so the glyph is the one that reads "this is how we keep the account safe".
               helperIcon="verified"
               secure
-              // `newPassword`, not `password`: this is what tells the platform's keychain to *offer* a
-              // strong password rather than to look for a saved one it cannot have.
               autofill="newPassword"
               autoCapitalize="none"
             />
@@ -134,10 +115,8 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
               onBlur={field.onBlur}
               error={fieldState.error?.message}
               icon="password"
-              placeholder="Re-enter your password"
+              placeholder="Confirm your password"
               secure
-              // Autofill is off on the confirmation on purpose: a keychain filling both boxes makes them
-              // match without the user ever having typed the password they will need next time.
               autofill="off"
               autoCapitalize="none"
               returnKeyType="go"
@@ -155,7 +134,7 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
             <Checkbox
               checked={field.value}
               onChange={field.onChange}
-              label="I agree to the terms of use and privacy policy"
+              label="By signing up, you agree to our terms of use and privacy policy."
               error={fieldState.error?.message}
             />
           )}
@@ -164,6 +143,7 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
         <Button
           label="Create account"
           size="lg"
+          variant="primary"
           fullWidth
           disabled={!isValid}
           loading={isSubmitting}
@@ -175,6 +155,8 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
           variant="secondary"
           size="lg"
           fullWidth
+          iconLeft={<GoogleIcon size={20} />}
+          style={styles.googleButton}
           onPress={showGoogleNotice}
         />
       </Stack>
@@ -183,7 +165,7 @@ export function SignupView({ onSubmit, onLogin }: SignupViewProps) {
         <Text variant="footnote" tone="secondary">
           Already have an account?
         </Text>
-        <TextLink label="Log in" onPress={onLogin} />
+        <TextLink label="Log in" tone="accent" onPress={onLogin} />
       </Stack>
     </Stack>
   );

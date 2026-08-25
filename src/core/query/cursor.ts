@@ -75,7 +75,10 @@ export interface Cursor {
 function isValidCursor(cursor: Cursor): boolean {
   return (
     TIMESTAMP_PATTERN.test(cursor.createdAt) &&
-    // A shape match is not enough: `2026-02-30T…` matches the pattern and is not a date.
+    // A shape match is not enough — the pattern's `\d{2}` runs accept `2026-13-25T99:99:99Z`. It is
+    // not a full calendar check either: V8 rolls `2026-02-30` over to March rather than rejecting it,
+    // and that is fine here. A cursor's timestamp comes from the database, so this guard is aimed at
+    // a caller passing something that is not a timestamp at all, not at arithmetic on real dates.
     Number.isFinite(Date.parse(cursor.createdAt)) &&
     UUID_PATTERN.test(cursor.id)
   );

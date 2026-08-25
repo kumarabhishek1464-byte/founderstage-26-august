@@ -1,6 +1,5 @@
 /**
- * `TabBar` — the bottom navigation chrome. 56pt of white, one hairline, five equal slots, and the
- * red mark riding on the hairline under whichever slot you are in.
+ * `TabBar` — the bottom navigation chrome. 56pt of white, one hairline, five equal slots.
  *
  * It is rendered through `<TabList asChild>`, which means expo-router owns the *behaviour* of the tabs
  * and this file owns 100% of their appearance. No `@react-navigation/bottom-tabs`, no `tabBarStyle`
@@ -14,42 +13,36 @@
  * chrome   white, top hairline, safe-area padding      ← touches the screen edges
  *   row    56pt, five slots, clamped to 720, centred   ← no padding, no border
  *     …five NavItems…
- *     NavIndicator                                     ← absolutely positioned against `row`
  * ```
  *
  * `chrome` carries the safe-area insets, because a white bar has to run to the bottom of the display
  * — stopping short of the home indicator leaves a strip of whatever is behind it. `row` carries the
- * height and the content clamp, and deliberately carries **no padding and no border**, because an
- * absolutely positioned child is laid out against its parent's padding box: give `row` padding and
- * the indicator's `top: -1` stops landing on the hairline.
+ * height and the content clamp.
  *
  * `flexDirection: 'column'` is restated on `chrome` because `TabList` injects
  * `{ flexDirection: 'row', justifyContent: 'space-between' }` through the slot. Without the restate,
  * `row`'s `alignSelf: 'center'` would centre on the vertical axis and the bar would collapse.
  *
- * ## Why the indicator's position is arithmetic and not a measurement
+ * ## Why there is no active mark
  *
- * Five items at `flex: 1` in a known width are five equal slots, so the active slot's centre is
- * computable — no `onLayout`, no state, no first-frame jump at 0. The one thing that has to be kept
- * true is that the divisor here and the `flex: 1` in `NavItem` describe the same layout, which is why
- * the count comes from `DESTINATION_ORDER` rather than a literal 5.
+ * There was one — a 24×2 red segment riding the hairline under the active slot. It is gone because the
+ * active destination is already stated twice in the slot itself: `NavItem` turns both the glyph and
+ * the label `accent`. A third simultaneous statement of the same fact is noise, and on a five-up bar
+ * it reads as a progress indicator rather than as "you are here". The rail has never had one, so this
+ * also makes the two orientations agree.
+ *
+ * `NavIndicator` is still used by nothing else; it is left in place because the arithmetic in it is
+ * the non-obvious part, and a future segmented control will want exactly that.
  */
-import { View, useWindowDimensions } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { createStyles, useTheme } from '../design-system/theme';
-import { DESTINATION_ORDER } from './destinations';
-import { NavIndicator } from './NavIndicator';
+import { createStyles } from '../design-system/theme';
 
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 interface TabBarProps {
-  /**
-   * Which destination the mark sits under. Always a real index — `useActiveDestinationIndex` resolves
-   * the off-tab case before it gets here, so there is no "nothing selected" state to draw.
-   */
-  readonly activeIndex: number;
   /** The `TabTrigger` elements. Supplied by the layout; also read by expo-router's parser. */
   readonly children: ReactNode;
   /** Injected by `TabList`'s slot. Not passed by hand. */
@@ -74,15 +67,9 @@ const useStyles = createStyles((t) => ({
   },
 }));
 
-export function TabBar({ activeIndex, children, style }: TabBarProps) {
+export function TabBar({ children, style }: TabBarProps) {
   const styles = useStyles();
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-
-  const rowWidth = Math.min(width - insets.left - insets.right, theme.size.contentMaxWidth);
-  const slotWidth = rowWidth / DESTINATION_ORDER.length;
-  const markOffset = activeIndex * slotWidth + (slotWidth - theme.size.navMark) / 2;
 
   return (
     <View
@@ -98,7 +85,6 @@ export function TabBar({ activeIndex, children, style }: TabBarProps) {
     >
       <View style={styles.row} accessibilityRole="tablist">
         {children}
-        <NavIndicator axis="x" offset={markOffset} />
       </View>
     </View>
   );

@@ -32,6 +32,7 @@
 import { Image } from 'expo-image';
 import { View } from 'react-native';
 
+import { hiddenFromAssistiveTech } from '../a11y';
 import { createStyles, useTheme } from '../theme';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -145,8 +146,7 @@ export function Avatar({ source, name, size = 'md', accessibilityLabel, style }:
       accessible={!isDecorative}
       accessibilityRole={isDecorative ? undefined : 'image'}
       accessibilityLabel={accessibilityLabel}
-      accessibilityElementsHidden={isDecorative}
-      importantForAccessibility={isDecorative ? 'no-hide-descendants' : 'yes'}
+      {...hiddenFromAssistiveTech(isDecorative)}
     >
       {initials === '' ? (
         <Icon name="profile" size={GLYPH_SIZE[size]} tone="tertiary" />

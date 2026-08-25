@@ -9,6 +9,18 @@
  * it — so the large, obvious target would work everywhere except on the words telling you to use it.
  * One control, one announcement, and the pill is the affordance that says where to aim.
  *
+ * ## Why the label is not repeated inside the zone
+ *
+ * The obvious composition prints `label` twice: once in the label row that keeps this field aligned with
+ * the `TextField`s beside it, and again as the headline inside the dashes. On screen that is the same
+ * three words a hundred points apart, one directly under the other — which reads as a rendering bug, and
+ * is one of the few mistakes a user will notice before they notice the design.
+ *
+ * So the label row owns the ask, and the zone owns the *answer to it*: what will be accepted, and the
+ * pill that says where to aim. Assistive technology loses nothing — the zone still carries `label` as its
+ * `accessibilityLabel` and `hint` as its `accessibilityHint`, so it announces as one named control with
+ * its constraints attached, exactly as it did.
+ *
  * ## Why `disabled` carries a hint instead of the component hiding
  *
  * The state this ships in. There is no storage bucket, no `src/core/database`, and no server-side
@@ -144,13 +156,7 @@ export function FileDropzone({
 
   return (
     <View style={style}>
-      <View
-        style={styles.labelRow}
-        // The zone below carries this string as its `accessibilityLabel`, the same relationship
-        // `field.tsx` sets up for a text field.
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
+      <View style={styles.labelRow}>
         <Text variant="subhead" tone="secondary">
           {label}
         </Text>
@@ -205,10 +211,10 @@ export function FileDropzone({
           accessibilityState={{ disabled: inert }}
         >
           <Icon name="upload" size="lg" tone="tertiary" />
-          <Text variant="label" tone={inert ? 'disabled' : 'heading'} align="center">
-            {label}
-          </Text>
-          <Text variant="caption" tone="tertiary" align="center">
+          {/* The constraints are the zone's own line, because the label row above already made the ask.
+              `subhead` rather than `caption`: alone in a 100pt box, fine print reads as a caption
+              floating in space, and this is the sentence that stops a user picking a 40MB video. */}
+          <Text variant="subhead" tone={inert ? 'disabled' : 'secondary'} align="center">
             {hint}
           </Text>
           {!inert ? (

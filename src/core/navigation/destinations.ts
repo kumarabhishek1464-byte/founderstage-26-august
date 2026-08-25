@@ -63,28 +63,28 @@ export const DESTINATIONS = {
     href: '/capital',
     route: 'capital',
     label: 'Capital',
-    icon: 'coins',
+    icon: 'circleDollarSign',
     purpose: 'Open a raise, track investor conversations, close the round.',
   },
   tools: {
     href: '/tools',
     route: 'tools',
     label: 'Tools',
-    icon: 'wrench',
+    icon: 'layoutGrid',
     purpose: 'Cap tables, runway, dilution — the maths of running a company.',
   },
   hire: {
     href: '/hire',
     route: 'hire',
     label: 'Hire',
-    icon: 'userPlus',
+    icon: 'users',
     purpose: 'Post roles, review candidates, make offers.',
   },
   marketplace: {
     href: '/marketplace',
     route: 'marketplace',
     label: 'Marketplace',
-    icon: 'store',
+    icon: 'shoppingBag',
     purpose: 'Services and products, priced for early companies.',
   },
 } as const satisfies Record<DestinationName, Destination>;
@@ -111,8 +111,8 @@ type ExhaustiveOrder<T extends readonly DestinationName[]> =
       ];
 
 export const DESTINATION_ORDER: ExhaustiveOrder<
-  readonly ['home', 'capital', 'tools', 'hire', 'marketplace']
-> = ['home', 'capital', 'tools', 'hire', 'marketplace'];
+  readonly ['home', 'capital', 'hire', 'tools', 'marketplace']
+> = ['home', 'capital', 'hire', 'tools', 'marketplace'];
 
 /**
  * The label the bottom bar shows under the icon, and nothing else.
@@ -125,9 +125,7 @@ export const DESTINATION_ORDER: ExhaustiveOrder<
  * `label` remains what assistive tech announces in both orientations. A screen reader saying
  * "Market" would be reading the abbreviation the layout needed, not the name of the destination.
  */
-const BAR_LABEL: Readonly<Partial<Record<DestinationName, string>>> = {
-  marketplace: 'Market',
-};
+const BAR_LABEL: Readonly<Partial<Record<DestinationName, string>>> = {};
 
 export function barLabel(name: DestinationName): string {
   return BAR_LABEL[name] ?? DESTINATIONS[name].label;

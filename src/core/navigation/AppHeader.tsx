@@ -1,50 +1,52 @@
 /**
- * `AppHeader` — who you are and where you are on the left, what is waiting for you on the right.
+ * `AppHeader` — the identity bar at the top of the shell.
+ *
+ * Rendered *outside* `Tabs` by `(tabs)/_layout.tsx`, so it does not participate in the tab transition:
+ * who you are is not a per-screen fact, and animating it on every tab change would say that it is.
+ *
+ * ## Geometry
  *
  * ```
- * ┌──────────────────────────────────────────────────────────┐
- * │ (◯)  FounderStage                            ⌾      ⌾    │
- * └──────────────────────────────────────────────────────────┘
- *   avatar  wordmark                       notifications  chat
+ * chrome   white, bottom hairline, safe-area top padding
+ *   row    size.chrome (56), avatar + identity | notifications + messages
  * ```
  *
- * 56pt tall, white, one hairline at the bottom, and nothing else — no shadow, no title, no back
- * chevron. It sits *above* the navigator rather than inside it, so it does not slide or cross-fade
- * when the destination changes: the identity of the application is not a per-screen decoration, and a
- * header that re-animates on every tab is the single clearest tell of a shell assembled from
- * defaults.
+ * The row is `size.chrome` rather than a local constant, which is the same token the bottom bar uses.
+ * The two bars being equal is a design decision — the canvas sits in a symmetrical frame — and 56 is
+ * derived from this side too: `spacing.sm` + `avatarMd` (32) + `spacing.sm`.
  *
- * ## Full-bleed on purpose
+ * Padding is asymmetric (`md` left, `sm` right) and that is not an oversight. The left edge is a
+ * 32pt circle whose ink runs to its own edge, so it needs the full margin. The right edge is a 40pt
+ * `IconButton` whose glyph is 20pt centred, so it already carries 10pt of its own optical padding;
+ * matching the left number would leave the bell looking inset.
  *
- * The header is not clamped to `size.contentMaxWidth` the way `Screen`'s content and `TabBar`'s row
- * are. Chrome is not content. Clamping it on a 1440pt display would float a white strip in the middle
- * of the window with the hairline stopping short on both sides, and the wordmark would stop lining up
- * with the rail beneath it. Instead the hairline runs edge to edge and the wordmark sits at 24 —
- * which is `Screen`'s gutter and the rail's glyph column, so all three share one vertical line.
+ * ## The badges are decorative
  *
- * ## The asymmetric padding is deliberate
- *
- * 24 on the left, 12 on the right. Text has a hard edge and lands where it is put; a glyph centred in
- * a 40pt circle has roughly 10pt of its own transparent margin before the ink starts. Padding both
- * sides to 24 would put the wordmark's ink at 24 and the bell's ink at 34, and the right side would
- * read as indented. 12 puts the ink at about 22 — two points from parity, which is closer than the
- * eye resolves at this size. Boxes are aligned to the number; ink is aligned to the eye.
- *
- * ## The avatar does not do anything yet
- *
- * It is `Avatar` with no `source` and no `name`, so it renders the `profile` glyph — a correct
- * signed-out state, not a placeholder. It is deliberately **not** pressable: there is no auth and no
- * profile route, so a tappable avatar would either lead nowhere or lead to a screen invented to give
- * it a destination. The trigger for wrapping it in a control is authentication, and at that point the
- * control owns the label ("Your profile") because that names the destination rather than the picture.
+ * The counts are `Text` layered over the button, hidden from assistive tech, because the accessible
+ * name has to carry the count in a form that reads as a sentence — "Notifications, 3 unread" — rather
+ * than as a stray "3" announced after the button. That is what `accessibilityLabel` below does.
  */
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, IconButton, Wordmark } from '@/core/design-system';
+import { Avatar, IconButton, Text } from '@/core/design-system';
 
+import { hiddenFromAssistiveTech } from '../design-system/a11y';
 import { createStyles, useTheme } from '../design-system/theme';
+
+/**
+ * The signed-in founder. Hardcoded while the app is a shell — this is the seam a session/profile
+ * query replaces, and keeping it as one object here is what stops the name being typed into JSX in
+ * two places and then drifting.
+ */
+const VIEWER = {
+  name: 'Abhiroy Katiyar',
+  plan: 'Pro',
+  online: true,
+  notifications: 3,
+  messages: 2,
+} as const;
 
 const useStyles = createStyles((t) => ({
   chrome: {
@@ -58,19 +60,55 @@ const useStyles = createStyles((t) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  // `spacing.sm` between the avatar and the wordmark: close enough to read as one lockup — a person
-  // inside a product — rather than as two unrelated items that happen to share a corner.
-  brand: {
+  identity: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.spacing.sm,
+    // So a long name truncates rather than pushing the bell off the right edge.
+    flexShrink: 1,
   },
-  // `spacing.xxs`, because each `IconButton` already carries 10pt of its own padding around a 20pt
-  // glyph. Anything wider and the two actions stop reading as a pair.
+  avatarWrap: { position: 'relative' },
+  /**
+   * The presence dot. Sized against `iconSm` (16) at three-quarters rather than a literal 12: it is a
+   * mark beside a 32pt circle, and tying it to the icon scale is what keeps it proportional if that
+   * scale is ever retuned. The white ring is what separates it from the avatar's own hairline.
+   */
+  onlineDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: t.size.iconSm * 0.75,
+    height: t.size.iconSm * 0.75,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.status.success,
+    borderWidth: t.border.focus,
+    borderColor: t.colors.surface.primary,
+  },
+  nameBlock: { flexShrink: 1 },
+  planRow: { flexDirection: 'row', alignItems: 'center' },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.spacing.xxs,
+  },
+  badgeWrap: { position: 'relative' },
+  /**
+   * `minWidth` rather than `width`, so a two-digit count widens the pill instead of clipping. The
+   * offsets put it over the glyph's top-right corner: the button is 40 and the glyph 20 centred, so
+   * 10/10 is the corner and 4 pulls the badge just outside it.
+   */
+  badge: {
+    position: 'absolute',
+    top: t.spacing.xxs,
+    right: t.spacing.xxs,
+    minWidth: t.size.iconSm,
+    height: t.size.iconSm,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.action.primary,
+    borderWidth: t.border.focus,
+    borderColor: t.colors.surface.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }));
 
@@ -81,38 +119,69 @@ export function AppHeader() {
   const router = useRouter();
 
   return (
-    // `paddingTop` rather than a `SafeAreaView`, so the white and the hairline are one continuous
-    // surface from the top of the display down — the status bar sits on the header, not above it.
     <View style={[styles.chrome, { paddingTop: insets.top }]}>
       <View
         style={[
           styles.row,
           {
-            paddingLeft: theme.spacing.xl + insets.left,
+            paddingLeft: theme.spacing.md + insets.left,
             paddingRight: theme.spacing.sm + insets.right,
           },
         ]}
       >
-        <View style={styles.brand}>
-          <Avatar size="md" />
-          <Wordmark />
+        <View style={styles.identity}>
+          <View style={styles.avatarWrap}>
+            <Avatar size="md" name={VIEWER.name} />
+            {VIEWER.online ? <View style={styles.onlineDot} /> : null}
+          </View>
+
+          <View style={styles.nameBlock}>
+            <Text variant="label" tone="heading" numberOfLines={1}>
+              {VIEWER.name}
+            </Text>
+            <View style={styles.planRow}>
+              <Text variant="caption" tone="tertiary">
+                {'FounderStage '}
+              </Text>
+              <Text variant="caption" tone="accent">
+                {VIEWER.plan}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.actions}>
-          <IconButton
-            name="notifications"
-            accessibilityLabel="Notifications"
-            onPress={() => {
-              router.push('/notifications');
-            }}
-          />
-          <IconButton
-            name="chat"
-            accessibilityLabel="Messages"
-            onPress={() => {
-              router.push('/chat');
-            }}
-          />
+          <View style={styles.badgeWrap}>
+            <IconButton
+              name="notifications"
+              tone="heading"
+              accessibilityLabel={`Notifications, ${String(VIEWER.notifications)} unread`}
+              onPress={() => {
+                router.push('/notifications');
+              }}
+            />
+            <View style={styles.badge} {...hiddenFromAssistiveTech(true)}>
+              <Text variant="overline" tone="inverse">
+                {String(VIEWER.notifications)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.badgeWrap}>
+            <IconButton
+              name="chat"
+              tone="heading"
+              accessibilityLabel={`Messages, ${String(VIEWER.messages)} unread`}
+              onPress={() => {
+                router.push('/chat');
+              }}
+            />
+            <View style={styles.badge} {...hiddenFromAssistiveTech(true)}>
+              <Text variant="overline" tone="inverse">
+                {String(VIEWER.messages)}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </View>

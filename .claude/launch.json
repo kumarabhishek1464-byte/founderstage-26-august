@@ -2,10 +2,31 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "native",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--port", "8081"],
+      "port": 8081,
+      "autoPort": false
+    },
+    {
       "name": "web",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web", "--port", "8090"],
       "port": 8090,
+      "autoPort": false
+    },
+    {
+      "name": "web-alt",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8091"],
+      "port": 8091,
+      "autoPort": false
+    },
+    {
+      "name": "web-check",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8092"],
+      "port": 8092,
       "autoPort": false
     }
   ]

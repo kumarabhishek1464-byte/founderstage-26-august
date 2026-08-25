@@ -18,7 +18,10 @@ export default function AboutYouScreen() {
   const theme = useTheme();
 
   return (
-    <Screen scroll contentStyle={{ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl2 }}>
+    <Screen
+      scroll
+      contentStyle={{ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl2 }}
+    >
       <AboutYouView
         onBack={() => {
           router.back();

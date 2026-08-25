@@ -123,8 +123,8 @@ const useStyles = createStyles((t) => ({
  * call site because both the glyph and the label need the same answer.
  */
 function resolveTone(isActive: boolean, isEngaged: boolean): Tone {
-  if (isActive) return 'heading';
-  return isEngaged ? 'secondary' : 'tertiary';
+  if (isActive) return 'accent';
+  return isEngaged ? 'heading' : 'secondary';
 }
 
 export function NavItem({
@@ -217,7 +217,7 @@ export function NavItem({
        * Not wrapped in a spacing element. `FocusRing` is absolutely positioned, so Yoga treats it the
        * way CSS does — not a flex item — and the bar item's `gap` skips it.
        */}
-      <FocusRing visible={hasKeyboardFocus} radius="md" />
+      <FocusRing visible={hasKeyboardFocus && isRail} radius="md" />
     </LinkPressable>
   );
 }

@@ -75,7 +75,7 @@ export default function TabsLayout() {
             {/* Content first, chrome second: the bar sits at the bottom of the column. */}
             <TabSlot />
             <TabList asChild>
-              <TabBar activeIndex={activeIndex}>{triggers}</TabBar>
+              <TabBar>{triggers}</TabBar>
             </TabList>
           </>
         )}

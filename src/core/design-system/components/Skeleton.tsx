@@ -40,6 +40,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { HIDDEN_FROM_ASSISTIVE_TECH } from '../a11y';
 import { createStyles, useTheme } from '../theme';
 
 import type { DimensionValue, StyleProp, ViewStyle } from 'react-native';
@@ -127,8 +128,7 @@ export function Skeleton({ width = '100%', height = 16, radius = 'sm', style }: 
       style={[styles.base, styles[RADIUS_STYLE[radius]], { width, height }, animatedStyle, style]}
       // A skeleton announces the wait once, at the container level, not once per bar — twelve
       // placeholders each saying "Loading" is unusable. The screen's loading state owns that.
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...HIDDEN_FROM_ASSISTIVE_TECH}
     />
   );
 }

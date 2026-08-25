@@ -106,8 +106,8 @@ export function CompleteView({ onExplore }: CompleteViewProps) {
         </Stack>
 
         <Text variant="body" tone="secondary" align="center">
-          Your profile is with our review team. You can look around in the meantime — a few things stay
-          locked until you are verified.
+          Your profile is with our review team. You can look around in the meantime — a few things
+          stay locked until you are verified.
         </Text>
       </Stack>
 

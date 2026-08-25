@@ -16,7 +16,10 @@ export default function CompleteScreen() {
   const theme = useTheme();
 
   return (
-    <Screen scroll contentStyle={{ paddingTop: theme.spacing.xl3, paddingBottom: theme.spacing.xl2 }}>
+    <Screen
+      scroll
+      contentStyle={{ paddingTop: theme.spacing.xl3, paddingBottom: theme.spacing.xl2 }}
+    >
       <CompleteView
         onExplore={() => {
           router.dismissAll();

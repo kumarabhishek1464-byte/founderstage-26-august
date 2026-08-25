@@ -36,6 +36,17 @@ const identity = IDENTITY[APP_ENV];
  */
 const SURFACE_WHITE = '#FFFFFF';
 
+/**
+ * `colors.action.primary` from the design system, restated.
+ *
+ * This file runs in the Node config context at build time, where importing from `src/` would pull
+ * the token module — and everything it imports — into a graph that has no Metro aliases and no
+ * React. The token stays the source of truth for the app; `SURFACE_WHITE` above already sets the
+ * precedent that OS-owned chrome restates it. ADR-0017 §4's "authoring a fourth red" warning is why
+ * this is a named constant rather than a literal at the use site.
+ */
+const SIGNAL_RED = '#E53935';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: identity.name,
@@ -101,6 +112,45 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-image',
     'expo-secure-store',
     'expo-localization',
+
+    /**
+     * Voice notes. The permission string is the whole reason this entry exists: iOS rejects a
+     * binary that can reach `AVAudioSession` without an `NSMicrophoneUsageDescription`, and the
+     * default the plugin supplies names the library rather than the feature.
+     */
+    [
+      'expo-audio',
+      {
+        microphonePermission: 'Allow FounderStage to access your microphone to record voice notes.',
+      },
+    ],
+
+    /**
+     * Attachment picking. `photosPermission` covers the library; `cameraPermission` covers
+     * capture-in-place from the composer. Both are stated because iOS treats a missing string as
+     * a crash on first use, not as a denied permission.
+     */
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Allow FounderStage to access your photos to send them in a conversation.',
+        cameraPermission:
+          'Allow FounderStage to use your camera to send a photo in a conversation.',
+      },
+    ],
+
+    /**
+     * Push. `color` tints the small icon on Android; no `icon` is set because the plugin resolves
+     * a path at build time and pointing it at an asset that does not exist fails the build rather
+     * than falling back. The monochrome adaptive icon already ships, so the default is correct.
+     */
+    [
+      'expo-notifications',
+      {
+        color: SIGNAL_RED,
+      },
+    ],
     [
       '@sentry/react-native/expo',
       {

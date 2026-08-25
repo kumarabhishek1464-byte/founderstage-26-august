@@ -1,15 +1,10 @@
 import { Screen } from '@/core/design-system';
-import { DestinationPlaceholder } from '@/core/navigation';
+import { HomeFeedView } from '@/features/home';
 
-/**
- * The safe-area insets are already handled by the chrome around this screen — `AppHeader` pads for the
- * status bar and `TabBar` pads for the home indicator — so a screen that padded for them again would
- * inset its content twice.
- */
 export default function HomeScreen() {
   return (
-    <Screen scroll safeTop={false} safeBottom={false}>
-      <DestinationPlaceholder destination="home" />
+    <Screen scroll surface="secondary" padded={false} safeTop={false} safeBottom={false}>
+      <HomeFeedView />
     </Screen>
   );
 }

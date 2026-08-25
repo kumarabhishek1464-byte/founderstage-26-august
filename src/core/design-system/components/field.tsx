@@ -36,6 +36,7 @@
  */
 import { View } from 'react-native';
 
+import { HIDDEN_FROM_ASSISTIVE_TECH } from '../a11y';
 import { createStyles } from '../theme';
 import { Icon } from './Icon';
 import { Stack } from './Stack';
@@ -71,11 +72,9 @@ export const useFieldStyles = createStyles((t) => ({
     gap: t.spacing.xs,
     paddingHorizontal: t.spacing.md,
     borderWidth: t.border.hairline,
-    // `radius.md` (12) rather than the `radius.sm` (8) the token comments suggest for inputs, so a
-    // field and the button that submits it share a corner. `sm` is for controls inside a field.
-    borderRadius: t.radius.md,
-    backgroundColor: t.colors.surface.primary,
-    borderColor: t.colors.border.subtle,
+    borderRadius: t.radius.lg,
+    backgroundColor: '#F0F1F4',
+    borderColor: 'transparent',
     // Keeps the `prefix` rule and a long value from painting over the rounded corners.
     overflow: 'hidden',
   },
@@ -202,12 +201,8 @@ export function Field({
        * label is not a separate stop either. Leaving it visible would announce every field's name
        * twice: once on the text, once on the control.
        */}
-      <View
-        style={styles.labelRow}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Text variant="subhead" tone={disabled ? 'disabled' : 'secondary'}>
+      <View style={styles.labelRow} {...HIDDEN_FROM_ASSISTIVE_TECH}>
+        <Text variant="subhead" tone={disabled ? 'disabled' : 'heading'}>
           {label}
         </Text>
         {optional ? (

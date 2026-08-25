@@ -31,6 +31,23 @@ export const colors = {
     tertiary: '#F5F5F5',
     /** Near-black rather than pure, for tooltips and dark chips. Pure black flares on OLED. */
     inverse: '#111111',
+    /**
+     * A red-tinted fill for a *quiet* accent action — the discovery CTAs, which have to read as
+     * offers rather than as five competing primary buttons.
+     *
+     * This is the one sanctioned red background, and it exists because the alternative is worse: a
+     * row of four filled `action.primary` buttons in a carousel turns the scarce accent into
+     * wallpaper. At this tint the red is still the signal; it is just spoken quietly.
+     */
+    accentSubtle: '#FDECEC',
+    /**
+     * Near-navy, one step off `inverse`, for editorial and data thumbnails inside a card.
+     *
+     * Separate from `inverse` because the two are retuned for different reasons: `inverse` moves if
+     * dark chips read heavy, `spotlight` moves if a thumbnail stops separating from the card it sits
+     * in. The cool cast is deliberate — a chart on `#111111` reads as a hole in the card.
+     */
+    spotlight: '#12132A',
   },
 
   text: {
@@ -48,6 +65,22 @@ export const colors = {
     inverse: '#FFFFFF',
     /** Red as a foreground. Emphasis and large type only — 4.23:1. */
     accent: '#E53935',
+    /**
+     * Hashtags and inline links. Blue rather than the brand red for the same reason `focus.ring` is:
+     * a link is not an action, and a feed whose tags are red has no accent left for the one thing on
+     * the screen worth pressing. 5.28:1 on white — AA at any size.
+     */
+    link: '#2F6BD4',
+    /**
+     * The secondary accent. Two jobs, and they are the same job: *machine judgement* and *earned
+     * standing* — the intelligence affordances (sparkles, "Intelligent Discoveries", a generated
+     * chart) and the mentor badge.
+     *
+     * A second accent is a real cost, so it is deliberately confined to those. Violet is the choice
+     * because it is the only hue that does not read as a status: green, amber and blue are all
+     * already spoken for by `status.*`, and a second red would be indistinguishable from the CTA.
+     */
+    violet: '#7C5CFC',
   },
 
   border: {
@@ -75,6 +108,13 @@ export const colors = {
     secondaryPressed: '#F5F5F5',
     /** Tertiary is transparent at rest, so only the pressed state has a fill. */
     tertiaryPressed: '#F5F5F5',
+    /**
+     * The quiet accent action: `surface.accentSubtle` behind an `text.accent` label. Authored as an
+     * action pair rather than reused from `surface` so the pressed step is a real value — darkening a
+     * #FDECEC fill by opacity moves it towards white, which reads as the button *un*pressing.
+     */
+    accentSubtle: '#FDECEC',
+    accentSubtlePressed: '#F7D9D8',
   },
 
   /**

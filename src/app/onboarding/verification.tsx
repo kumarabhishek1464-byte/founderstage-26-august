@@ -14,7 +14,10 @@ export default function VerificationScreen() {
   const theme = useTheme();
 
   return (
-    <Screen scroll contentStyle={{ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl2 }}>
+    <Screen
+      scroll
+      contentStyle={{ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl2 }}
+    >
       <VerificationView
         onBack={() => {
           router.back();

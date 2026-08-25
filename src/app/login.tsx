@@ -17,7 +17,10 @@ export default function LoginScreen() {
   const theme = useTheme();
 
   return (
-    <Screen scroll contentStyle={{ paddingTop: theme.spacing.xl2, paddingBottom: theme.spacing.xl2 }}>
+    <Screen
+      scroll
+      contentStyle={{ paddingTop: theme.spacing.xl2, paddingBottom: theme.spacing.xl2 }}
+    >
       <LoginView
         onSubmit={() => {
           router.replace('/');

@@ -133,11 +133,7 @@ export function VerificationView({ onBack, onSubmit }: VerificationViewProps) {
           )}
         />
 
-        <FileDropzone
-          label="Upload proof"
-          optional
-          hint="PDF, PPT, DOC, PNG or JPG. Max 10 MB."
-        />
+        <FileDropzone label="Upload proof" optional hint="PDF, PPT, DOC, PNG or JPG. Max 10 MB." />
 
         <Banner
           icon="verified"

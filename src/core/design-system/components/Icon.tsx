@@ -35,6 +35,7 @@ import ArrowLeft from 'lucide-react-native/icons/arrow-left';
 import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import AtSign from 'lucide-react-native/icons/at-sign';
 import Bell from 'lucide-react-native/icons/bell';
+import Bookmark from 'lucide-react-native/icons/bookmark';
 import Briefcase from 'lucide-react-native/icons/briefcase';
 import Building2 from 'lucide-react-native/icons/building-2';
 import Check from 'lucide-react-native/icons/check';
@@ -45,34 +46,42 @@ import ChevronUp from 'lucide-react-native/icons/chevron-up';
 import CircleAlert from 'lucide-react-native/icons/circle-alert';
 import CircleCheck from 'lucide-react-native/icons/circle-check';
 import Clock from 'lucide-react-native/icons/clock';
-import Coins from 'lucide-react-native/icons/coins';
+import CircleDollarSign from 'lucide-react-native/icons/circle-dollar-sign';
 import Eye from 'lucide-react-native/icons/eye';
 import EyeOff from 'lucide-react-native/icons/eye-off';
 import Globe from 'lucide-react-native/icons/globe';
 import House from 'lucide-react-native/icons/house';
 import Info from 'lucide-react-native/icons/info';
+import LayoutGrid from 'lucide-react-native/icons/layout-grid';
 import Link from 'lucide-react-native/icons/link';
 import Lock from 'lucide-react-native/icons/lock';
 import Mail from 'lucide-react-native/icons/mail';
 import MapPin from 'lucide-react-native/icons/map-pin';
 import MessageCircle from 'lucide-react-native/icons/message-circle';
+import ChartColumn from 'lucide-react-native/icons/chart-column';
+import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
+import Ellipsis from 'lucide-react-native/icons/ellipsis';
+import EllipsisVertical from 'lucide-react-native/icons/ellipsis-vertical';
 import Phone from 'lucide-react-native/icons/phone';
+import Rocket from 'lucide-react-native/icons/rocket';
+import SquarePen from 'lucide-react-native/icons/square-pen';
 import Plus from 'lucide-react-native/icons/plus';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
 import Search from 'lucide-react-native/icons/search';
 import Settings from 'lucide-react-native/icons/settings';
+import Share2 from 'lucide-react-native/icons/share-2';
 import ShieldCheck from 'lucide-react-native/icons/shield-check';
-import Store from 'lucide-react-native/icons/store';
+import ShoppingBag from 'lucide-react-native/icons/shopping-bag';
+import Sparkles from 'lucide-react-native/icons/sparkles';
 import TrendingUp from 'lucide-react-native/icons/trending-up';
+import ThumbsUp from 'lucide-react-native/icons/thumbs-up';
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert';
 import Upload from 'lucide-react-native/icons/upload';
 import User from 'lucide-react-native/icons/user';
-import UserPlus from 'lucide-react-native/icons/user-plus';
-import Wrench from 'lucide-react-native/icons/wrench';
+import Users from 'lucide-react-native/icons/users';
 import X from 'lucide-react-native/icons/x';
 
-import { Platform } from 'react-native';
-
+import { hiddenFromAssistiveTech } from '../a11y';
 import { useTheme } from '../theme';
 import { toneColor } from './tone';
 
@@ -123,6 +132,30 @@ const REGISTRY = {
   home: House,
   chat: MessageCircle,
 
+  // Feed engagement
+  thumbsUp: ThumbsUp,
+  share: Share2,
+  bookmark: Bookmark,
+  moreHorizontal: Ellipsis,
+  /**
+   * The overflow affordance on a *row*, where the horizontal form would read as belonging to the text
+   * beside it rather than to the row it terminates. Both exist because the axis is a layout decision,
+   * not a synonym.
+   */
+  moreVertical: EllipsisVertical,
+  sparkles: Sparkles,
+
+  /**
+   * The three things a founder can start from the composer. Named after the artefact produced rather
+   * than the drawing: the glyph for `poll` is a bar chart, and a registry entry called `barChart` would
+   * get reused for analytics and then diverge from what the composer needs.
+   */
+  compose: SquarePen,
+  question: CircleQuestionMark,
+  poll: ChartColumn,
+  /** Community and launch surfaces — the discovery carousel's group card. */
+  rocket: Rocket,
+
   /**
    * A password field's two states. Named for what the control *does* rather than for the eye, because
    * the glyph and the action are inverted: the crossed-out eye means "hidden", and the control
@@ -160,10 +193,10 @@ const REGISTRY = {
    * rules out. `core/navigation/destinations.ts` holds the mapping, so swapping `coins` for
    * `landmark` is one line there and nothing here changes meaning.
    */
-  coins: Coins,
-  wrench: Wrench,
-  userPlus: UserPlus,
-  store: Store,
+  circleDollarSign: CircleDollarSign,
+  layoutGrid: LayoutGrid,
+  users: Users,
+  shoppingBag: ShoppingBag,
 } as const satisfies Record<string, IconComponent>;
 
 export type IconName = keyof typeof REGISTRY;
@@ -194,8 +227,6 @@ const SIZE_TOKEN: Readonly<Record<IconSize, (t: Theme) => number>> = {
   lg: (t) => t.size.iconLg,
 };
 
-const isWeb = Platform.OS === 'web';
-
 export function Icon({
   name,
   size = 'md',
@@ -223,13 +254,11 @@ export function Icon({
       accessible={isDecorative ? undefined : true}
       accessibilityRole={isDecorative ? undefined : 'image'}
       accessibilityLabel={accessibilityLabel}
-      // Native only. `react-native-svg` renders a real `<svg>` on the web and forwards whatever it
-      // does not recognise straight to the DOM, so these three arrive at React DOM as unknown
-      // attributes and are logged as errors. They have nothing to do on the web anyway: an `<svg>`
-      // carrying no title and no `aria-label` contributes no accessible name, which is exactly what a
-      // decorative icon wants.
-      accessibilityElementsHidden={isWeb ? undefined : isDecorative}
-      importantForAccessibility={isWeb ? undefined : isDecorative ? 'no-hide-descendants' : 'yes'}
+      // `react-native-svg` renders a real `<svg>` on the web and forwards whatever it does not
+      // recognise straight to the DOM, so the two native props arrive at React DOM as unknown
+      // attributes and are logged as errors on every render. `../a11y` owns that platform split, and
+      // on the web it spells the same intent as `aria-hidden` — which an `<svg>` does understand.
+      {...hiddenFromAssistiveTech(isDecorative)}
     />
   );
 }

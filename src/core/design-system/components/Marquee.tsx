@@ -51,6 +51,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { HIDDEN_FROM_ASSISTIVE_TECH } from '../a11y';
 import { createStyles } from '../theme';
 
 import type { ReactNode } from 'react';
@@ -67,15 +68,24 @@ interface MarqueeProps {
   readonly style?: StyleProp<ViewStyle>;
 }
 
-const useStyles = createStyles(() => ({
-  /** The clip. Without it the row spills across the whole screen and every parent's padding is a lie. */
-  frame: { overflow: 'hidden' },
+const useStyles = createStyles(() => {
   /**
    * `flex-start` so the row takes its content's width instead of the frame's. In a column parent the
    * default is `stretch`, which would pin the row to the frame width and make the drift impossible.
    */
-  row: { flexDirection: 'row', alignSelf: 'flex-start' },
-}));
+  const row = { flexDirection: 'row', alignSelf: 'flex-start' } as const;
+
+  return {
+    /** The clip. Without it the row spills across the whole screen and every parent's padding is a lie. */
+    frame: { overflow: 'hidden' },
+    row,
+    /**
+     * The unmeasured, unannounced copies. `pointerEvents` lives in the style rather than in the prop of
+     * the same name, which React Native has deprecated and `react-native-web` logs on every render.
+     */
+    duplicate: { ...row, pointerEvents: 'none' },
+  };
+});
 
 /**
  * 20pt per second: a 400pt row crosses in twenty seconds. Slow enough to read a pill in passing, fast
@@ -158,13 +168,7 @@ export function Marquee({
               {children}
             </View>
           ) : (
-            <View
-              key={index}
-              style={styles.row}
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
+            <View key={index} style={styles.duplicate} {...HIDDEN_FROM_ASSISTIVE_TECH}>
               {children}
             </View>
           )

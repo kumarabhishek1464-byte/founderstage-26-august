@@ -40,6 +40,10 @@ export type Tone =
   | 'inverse'
   /** Red as a foreground. Emphasis and large type only. */
   | 'accent'
+  /** Hashtags and inline links. */
+  | 'link'
+  /** The secondary accent: intelligence affordances and mentor identity. */
+  | 'violet'
   | 'success'
   | 'warning'
   | 'error'
@@ -59,6 +63,8 @@ const TONE_COLOR: Readonly<Record<Tone, (t: Theme) => string>> = {
   disabled: (t) => t.colors.text.disabled,
   inverse: (t) => t.colors.text.inverse,
   accent: (t) => t.colors.text.accent,
+  link: (t) => t.colors.text.link,
+  violet: (t) => t.colors.text.violet,
   success: (t) => t.colors.status.success,
   warning: (t) => t.colors.status.warning,
   error: (t) => t.colors.status.error,

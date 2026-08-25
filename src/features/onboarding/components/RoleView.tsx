@@ -1,23 +1,5 @@
 /**
- * Step 2 — what the user does, in what, and at what point.
- *
- * ## Why this step has no form
- *
- * Three `Select`s whose options are closed unions ([`options.ts`](../model/options.ts)). There is nothing a
- * user can enter that is not already valid, so there is nothing to validate — and running the answers
- * through `react-hook-form` + `zod` anyway would mean the same three values living in two places, with a
- * commit step between them where they can disagree. Each select writes straight to the draft, and
- * `isRoleStepComplete` is the only rule this screen has.
- *
- * That also gives the behaviour the user expects for free: the sheet closes, the answer is saved, and
- * walking back into the step shows it still chosen. A form would need `defaultValues` plumbing to fake the
- * same thing.
- *
- * ## Why all three are required
- *
- * A role on its own is a job title. A role plus a sector plus a stage is the thing the network can actually
- * match on — "seed-stage FinTech founder" is a room, "founder" is not. So none of them is optional, and the
- * disabled CTA is the honest statement that a partial answer does not help.
+ * `RoleView` — Step 2 matching reference screen 5.
  */
 import { Select, Stack } from '@/core/design-system';
 
@@ -31,8 +13,6 @@ interface RoleViewProps {
 }
 
 export function RoleView({ onBack, onContinue }: RoleViewProps) {
-  // Selected field by field rather than as one `draft` object: the store hands back a new draft on every
-  // answer, and a component subscribed to the whole thing re-renders for changes it does not read.
   const role = useOnboardingStore((state) => state.draft.role);
   const sector = useOnboardingStore((state) => state.draft.sector);
   const stage = useOnboardingStore((state) => state.draft.stage);
@@ -47,41 +27,44 @@ export function RoleView({ onBack, onContinue }: RoleViewProps) {
     <OnboardingLayout
       step={2}
       title="Tell us who you are"
-      subtitle="This is what we match you on, so it is worth getting right."
+      subtitle="So we can personalize your experience"
       onBack={onBack}
       onContinue={onContinue}
       canContinue={canContinue}
-      footnote="Only your role and sector appear on your profile. Stage stays private."
+      footnote="You can always update this later from your profile settings."
+      footnoteIcon="password"
     >
       <Stack gap="lg">
         <Select
-          label="I am a"
+          label="Select your role"
           value={role}
           onChange={setRole}
           options={ROLE_OPTIONS}
-          icon="role"
-          placeholder="Select your role"
+          icon="profile"
+          placeholder="Choose your role"
+          helper="e.g., Founder, Investor, Angel Investor, Co-founder, Mentor, Advisor, Coach, Operator, Innovator, Other"
           sheetTitle="What best describes you?"
         />
 
         <Select
-          label="Sector"
+          label="Select your sector / industry"
           value={sector}
           onChange={setSector}
           options={SECTOR_OPTIONS}
-          icon="organization"
-          placeholder="Select a sector"
+          icon="role"
+          placeholder="Choose your sector"
+          helper="e.g., AI/ML, FinTech, HealthTech, SaaS, EdTech, E-commerce, DeepTech, Consumer, Other"
           sheetTitle="What sector do you work in?"
         />
 
         <Select
-          label="Stage"
+          label="Select your stage"
           value={stage}
           onChange={setStage}
           options={STAGE_OPTIONS}
           icon="growth"
-          placeholder="Select a stage"
-          helper="Where your company is today, or the stage you invest at."
+          placeholder="Choose your stage"
+          helper="e.g., Idea Stage, Pre-Seed, Seed, Series A, Growth Stage, Scale-up, Other"
           sheetTitle="What stage are you at?"
         />
       </Stack>

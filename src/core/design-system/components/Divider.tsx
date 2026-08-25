@@ -7,10 +7,10 @@
  * canvas, `faint` (`#F0F0F0`) inside an already-bordered container, where the default would read as a
  * second frame.
  *
- * `accessibilityElementsHidden` and `importantForAccessibility` are both set: a rule carries no
- * information, and left visible it inserts an empty stop between every pair of list rows in a screen
- * reader's traversal. The two props are the iOS and Android spellings of the same thing — RN does not
- * unify them, so omitting either leaves one platform announcing it.
+ * Hidden from assistive technology: a rule carries no information, and left visible it inserts an
+ * empty stop between every pair of list rows in a screen reader's traversal. The spread comes from
+ * `../a11y` rather than being written out here, because the iOS, Android and web spellings of that
+ * one intent differ and `react-native-web` forwards the native ones to the DOM.
  */
 import { View } from 'react-native';
 
@@ -77,8 +77,7 @@ export function Divider({
   return (
     <View
       style={[styles[ORIENTATION_STYLE[orientation]], styles[TONE_STYLE[tone]], insetStyle, style]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...HIDDEN_FROM_ASSISTIVE_TECH}
     />
   );
 }

@@ -1,0 +1,124 @@
+# FounderStage — local Supabase stack.
+#
+# Two settings here are load-bearing rather than cosmetic:
+#
+# `api.schemas` is the security boundary that makes internal SQL unreachable. Tables, enums and
+# RPCs live in `public` because `npm run db:types` is hard-coded to `--schema public`; the
+# SECURITY DEFINER predicates that back RLS live in `messaging`, and the rate-limit counters live
+# in `rate_limit`. Neither is listed below, so PostgREST will not route a request to them no
+# matter what a client asks for. Adding a schema to this list is a security decision.
+#
+# `auth.rate_limit` is docs/adr/0008-rate-limiting-in-postgres.md's GoTrue half. The application
+# half — send, group creation, member changes — is `rate_limit.consume()` in the migration,
+# because GoTrue's limiter only sees auth endpoints.
+
+project_id = "founderstage"
+
+[api]
+enabled = true
+port = 54321
+# `graphql_public` is Supabase's own and is left as shipped. `messaging`, `rate_limit` and `util`
+# are deliberately absent — see the file header.
+schemas = ["public", "graphql_public"]
+# PostgREST resolves unqualified names in a request against this path. `extensions` is present so
+# a function that reaches an extension operator does not need to qualify it.
+extra_search_path = ["public", "extensions"]
+# A hard ceiling on any single response. Every list in the app paginates on a keyset cursor
+# (src/core/query/cursor.ts), so a request that would exceed this is a bug, and truncating it is
+# cheaper than serving 100k rows to a phone.
+max_rows = 200
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+# Local mail catcher. Sign-up confirmations are disabled below, so this is only reached by
+# password recovery and email-change flows.
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+# Attachments are not built in v1. The ceiling is stated anyway because the default is 50 MiB and
+# an unrestricted bucket is the one storage mistake that cannot be undone after the fact.
+file_size_limit = "25MiB"
+
+[auth]
+enabled = true
+# The production scheme. `additional_redirect_urls` carries the dev/preview schemes from
+# app.config.ts's IDENTITY map plus the Metro web origin.
+site_url = "founderstage://"
+additional_redirect_urls = [
+  "founderstage://",
+  "founderstage-dev://",
+  "founderstage-preview://",
+  "http://localhost:8081",
+  "http://127.0.0.1:8081",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+# A 10-second grace window so two in-flight requests that both refresh do not sign the user out.
+refresh_token_reuse_interval = 10
+enable_signup = true
+# Off deliberately: an anonymous JWT still carries `authenticated`, so every RLS policy written
+# against `(select auth.uid())` would admit a throwaway identity into people search and DMs.
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+[auth.email]
+enable_signup = true
+# Local only. Turning this on in a hosted project is required before launch — an unconfirmed email
+# is an unowned identity, and messaging attaches a real name to it.
+enable_confirmations = false
+double_confirm_changes = true
+secure_password_change = true
+max_frequency = "1m"
+min_password_length = 8
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+# docs/adr/0008-rate-limiting-in-postgres.md §"GoTrue's own limiter". These are per-hour except
+# `sign_in_sign_ups` and `token_refresh`, which are per five minutes per IP. The ADR names them as
+# `otp` and `verify`; the CLI's keys are `sms_sent` and `token_verifications`.
+[auth.rate_limit]
+email_sent = 10
+sms_sent = 30
+anonymous_users = 30
+token_refresh = 150
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = true
+policy = "oneshot"

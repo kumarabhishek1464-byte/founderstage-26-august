@@ -64,7 +64,9 @@ export function InterestsView({ onBack, onContinue }: InterestsViewProps) {
       <Stack gap="xl">
         {INTEREST_CATEGORIES.map((category) => {
           const isOpen = expanded.includes(category.id);
-          const shown = isOpen ? category.options : category.options.slice(0, INTEREST_PREVIEW_COUNT);
+          const shown = isOpen
+            ? category.options
+            : category.options.slice(0, INTEREST_PREVIEW_COUNT);
           const hidden = category.options.length - INTEREST_PREVIEW_COUNT;
 
           return (

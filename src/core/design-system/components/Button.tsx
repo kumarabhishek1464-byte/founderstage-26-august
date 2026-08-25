@@ -43,8 +43,16 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import type { SpinnerTone } from './Spinner';
 import type { Tone } from './tone';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
+export type ButtonVariant =
+  'primary' | 'secondary' | 'tertiary' | 'destructive' | 'dark' | 'accentSoft';
 export type ButtonSize = 'sm' | 'md' | 'lg';
+
+/**
+ * Outline shape. `pill` is the default and the identity; `rounded` exists for buttons that sit inside
+ * a card and have to echo its corner rather than fight it — a pill inside a 160pt carousel card reads
+ * as a chip that escaped.
+ */
+export type ButtonShape = 'pill' | 'rounded';
 
 interface ButtonProps {
   /** The accessible name and the visible text. Required — see the note above. */
@@ -52,6 +60,8 @@ interface ButtonProps {
   readonly onPress: () => void;
   readonly variant?: ButtonVariant;
   readonly size?: ButtonSize;
+  /** Corner treatment. Defaults to `pill`. */
+  readonly shape?: ButtonShape;
   /** Blocks the press and dims to `opacity.disabled`. */
   readonly disabled?: boolean;
   /**
@@ -76,7 +86,6 @@ const useStyles = createStyles((t) => ({
     alignItems: 'center',
     justifyContent: 'center',
     gap: t.spacing.xs,
-    borderRadius: t.radius.md,
     // Declared on every variant so a bordered variant and a filled one are the same height. A
     // border added only where it is visible makes `secondary` 2px taller than `primary`, which
     // shows up as a misaligned row the moment the two sit side by side.
@@ -84,6 +93,9 @@ const useStyles = createStyles((t) => ({
     borderColor: 'transparent',
   },
   fullWidth: { alignSelf: 'stretch' },
+
+  shapePill: { borderRadius: t.radius.full },
+  shapeRounded: { borderRadius: t.radius.md },
 
   // Sizes. `md` is pinned to `size.touchTarget` rather than repeating 48, so the accessibility
   // floor and the default button are provably the same number.
@@ -97,6 +109,12 @@ const useStyles = createStyles((t) => ({
     borderColor: t.colors.action.primaryPressed,
   },
 
+  dark: { backgroundColor: t.colors.surface.inverse, borderColor: t.colors.surface.inverse },
+  darkPressed: {
+    backgroundColor: '#333333',
+    borderColor: '#333333',
+  },
+
   secondary: { backgroundColor: t.colors.action.secondary, borderColor: t.colors.border.subtle },
   secondaryPressed: { backgroundColor: t.colors.action.secondaryPressed },
 
@@ -107,6 +125,20 @@ const useStyles = createStyles((t) => ({
 
   destructive: { backgroundColor: t.colors.action.secondary, borderColor: t.colors.status.error },
   destructivePressed: { backgroundColor: t.colors.action.secondaryPressed },
+
+  /**
+   * The quiet accent: a red-tinted fill under a red label, borderless. For an offer repeated several
+   * times in one view — the discovery carousel — where filled `primary` would turn the scarce accent
+   * into a texture.
+   */
+  accentSoft: {
+    backgroundColor: t.colors.action.accentSubtle,
+    borderColor: t.colors.action.accentSubtle,
+  },
+  accentSoftPressed: {
+    backgroundColor: t.colors.action.accentSubtlePressed,
+    borderColor: t.colors.action.accentSubtlePressed,
+  },
 
   disabled: { opacity: t.opacity.disabled },
 
@@ -154,6 +186,12 @@ const VARIANT: Readonly<Record<ButtonVariant, VariantSpec>> = {
     textTone: 'inverse',
     spinnerTone: 'inverse',
   },
+  dark: {
+    container: 'dark',
+    containerPressed: 'darkPressed',
+    textTone: 'inverse',
+    spinnerTone: 'inverse',
+  },
   secondary: {
     container: 'secondary',
     containerPressed: 'secondaryPressed',
@@ -172,6 +210,16 @@ const VARIANT: Readonly<Record<ButtonVariant, VariantSpec>> = {
     textTone: 'error',
     spinnerTone: 'error',
   },
+  accentSoft: {
+    container: 'accentSoft',
+    containerPressed: 'accentSoftPressed',
+    textTone: 'accent',
+    spinnerTone: 'accent',
+  },
+};
+const SHAPE_STYLE: Readonly<Record<ButtonShape, SheetKey>> = {
+  pill: 'shapePill',
+  rounded: 'shapeRounded',
 };
 
 const SIZE_STYLE: Readonly<Record<ButtonSize, SheetKey>> = {
@@ -194,6 +242,7 @@ export function Button({
   onPress,
   variant = 'primary',
   size = 'md',
+  shape = 'pill',
   disabled = false,
   loading = false,
   iconLeft,
@@ -229,6 +278,7 @@ export function Button({
       accessibilityState={{ disabled: isInert, busy: loading }}
       style={({ pressed }) => [
         styles.base,
+        styles[SHAPE_STYLE[shape]],
         styles[SIZE_STYLE[size]],
         styles[spec.container],
         pressed && styles[spec.containerPressed],
@@ -239,7 +289,7 @@ export function Button({
     >
       <View style={[styles.content, loading && styles.contentHidden]}>
         {iconLeft}
-        <Text variant="label" tone={spec.textTone}>
+        <Text variant={size === 'lg' ? 'headline' : 'label'} tone={spec.textTone}>
           {label}
         </Text>
         {iconRight}

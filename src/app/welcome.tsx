@@ -14,7 +14,7 @@ import { Screen } from '@/core/design-system';
  */
 export default function WelcomeScreen() {
   return (
-    <Screen padded={false}>
+    <Screen padded={false} surface="primary">
       <WelcomeView
         onJoin={() => {
           router.push('/signup');
