@@ -1,0 +1,42 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+
+    // Beyond `strict`. Rationale and the two flags deliberately left off:
+    // docs/adr/0004-typescript-strictness.md
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // No JavaScript sources in this project; TS only.
+    "allowJs": false,
+
+    // TypeScript 6.0 stopped auto-including every package in node_modules/@types, so
+    // global-only type packages must be named.
+    //
+    // `expo/types` is referenced directly rather than relying on the generated
+    // `expo-env.d.ts` (which is gitignored, so it is absent on a clean checkout and
+    // `npm run verify` would then see `process.env` as `any`). It supplies the typed
+    // `process.env`, `__DEV__`, and the asset module declarations.
+    //
+    // `jest` is listed because tests sit beside the code they cover. `node` is
+    // deliberately absent: pulling it in would make `Buffer`, `process.cwd()` and
+    // `__dirname` type-check inside React Native code, where they do not exist at runtime.
+    "types": ["expo/types", "jest"],
+
+    // No `baseUrl`: TypeScript 6.0 deprecates it, and `paths` entries are resolved
+    // relative to this file's directory when it is absent. Expo's Metro resolver
+    // follows the same fallback (`pathsBasePath ?? projectRoot`), so the alias
+    // continues to resolve in bundling as well as type-checking.
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "dist", ".expo", "android", "ios", "supabase/.temp", "coverage"]
+}

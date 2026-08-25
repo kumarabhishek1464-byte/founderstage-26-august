@@ -1,0 +1,9 @@
+# The whole-project checks, run once per push rather than once per commit.
+#
+# `lint` and `format` are omitted: pre-commit already ran both over every staged file,
+# so repeating them across the entire tree here would only catch damage done outside
+# git — which CI covers. What pre-commit structurally cannot catch is the class of
+# breakage that spans files: a type error introduced in an untouched consumer, an
+# architectural boundary crossed transitively, a test broken elsewhere. That is exactly
+# this list.
+npm run typecheck && npm run arch:check && npm test -- --silent

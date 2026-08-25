@@ -1,0 +1,92 @@
+<!doctype html>
+<!--
+  The web shell for `web.output: 'single'` (ADR-0012).
+
+  This file exists because `src/app/+html.tsx` is NOT used in single-page output. Expo's
+  `createTemplateHtmlAsync` reads `public/index.html` and falls back to its own template
+  when the file is absent; `+html.tsx` is only rendered by the static/server export path.
+
+  Editing rules, and they are not stylistic:
+
+  1. Expo post-processes this file with `String.replace`, which hits the FIRST occurrence
+     of each marker. So nothing in this comment may spell out the language placeholder,
+     the title placeholder, or the closing head/body tags — a literal occurrence here
+     would be substituted instead of the real one, and the bundle script tag would be
+     injected into a comment. The page then serves 200 OK and renders nothing. This is
+     not hypothetical; it is what the first version of this file did.
+  2. Keep the four markers exactly once each, in the document, in the order below.
+  3. This file and `+html.tsx` are two shells for two output modes. Change one, change
+     the other, or switching `web.output` silently changes the document.
+
+  Deliberately no Content-Security-Policy meta tag. One static file serves both
+  `expo start --web` and production, and the two need different policies — Metro's HMR
+  requires 'unsafe-eval' and a ws: connect-src that must never reach production. A meta
+  CSP also cannot express frame-ancestors and cannot be delivered report-only. The policy
+  is a response header, declared in `public/_headers`.
+-->
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+    />
+    <title>%WEB_TITLE%</title>
+
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!--
+      No dark mode (ADR-0013). Declaring `light` stops the browser from painting its own
+      dark form controls and scrollbars over a white app on a device set to dark.
+    -->
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#FFFFFF" />
+
+    <!--
+      react-native-web root reset — the CSS that `<ScrollViewStyleReset />` emits in
+      +html.tsx, so the two shells produce the same layout. `flex: 1` matches Expo's own
+      template. https://necolas.github.io/react-native-web/docs/setup/
+    -->
+    <style id="expo-reset">
+      #root,
+      body,
+      html {
+        height: 100%;
+      }
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        flex: 1;
+      }
+    </style>
+
+    <!--
+      Deliberately tiny. Anything beyond preventing a flash of the wrong background
+      belongs in the design system — this stylesheet cannot read theme tokens, so every
+      value in it is a duplicate that has to be maintained by hand.
+    -->
+    <style id="founderstage-base">
+      html,
+      body,
+      #root {
+        background-color: #ffffff;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run FounderStage.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+# Lints and formats only the staged files. Deliberately does NOT run `tsc` or the test
+# suite: both are whole-project operations that cannot be scoped to a changeset, and a
+# multi-second wait on every commit is how pre-commit hooks end up bypassed with
+# `--no-verify`. Those run in pre-push and in CI instead.
+npx lint-staged

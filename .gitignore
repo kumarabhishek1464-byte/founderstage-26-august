@@ -1,0 +1,80 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# ── Environment ──────────────────────────────────────────────────────────────────
+# `.env.example` IS committed (names only, no values). Everything with real values
+# is not. The bare `.env` entry matters: Expo loads it automatically, so a secret
+# placed there would otherwise be committed.
+.env
+.env.*
+!.env.example
+
+# ── Testing ──────────────────────────────────────────────────────────────────────
+coverage/
+.jest-cache/
+junit.xml
+/maestro/.maestro/
+/playwright-report/
+/test-results/
+/blob-report/
+/.playwright/
+
+# ── Supabase ─────────────────────────────────────────────────────────────────────
+# `supabase/config.toml`, `migrations/`, `functions/` and `tests/` ARE committed —
+# they are the schema's source of truth. Only local CLI state is ignored.
+supabase/.temp/
+supabase/.branches/
+
+# ── Tooling caches ───────────────────────────────────────────────────────────────
+.eslintcache
+.prettiercache
+*.log
+dependency-graph.*
+
+# ── Editors ──────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# ── OS ───────────────────────────────────────────────────────────────────────────
+Thumbs.db
+desktop.ini

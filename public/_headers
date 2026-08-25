@@ -1,0 +1,36 @@
+# Security response headers for the web build.
+#
+# Copied verbatim into `dist/` by `expo export`. Read by Netlify and Cloudflare Pages;
+# inert on hosts that do not support the format — Vercel needs the same policy restated
+# in `vercel.json`, S3/CloudFront in a response-headers policy. Whichever host is
+# chosen, this file is the source of truth for the intended policy and the deployment
+# doc must point at it.
+#
+# Headers rather than a <meta> tag because:
+#   • `frame-ancestors` is ignored in meta, and it is the directive that actually stops
+#     clickjacking.
+#   • `expo start --web` and production share one `public/index.html`, and dev needs
+#     'unsafe-eval' plus a ws: connect-src that must never ship. A response header can
+#     differ per environment; a committed meta tag cannot.
+#   • Report-only rollout is impossible from meta.
+#
+# NOT yet verified against a live deployment — there is no host configured during the
+# foundation phase. Treat `script-src 'self'` in particular as needing a report-only
+# pass before it is enforced: switching `web.output` to `static` adds an inline
+# hydration bootstrap that this policy would block.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# Hashed bundle filenames are immutable, so they can be cached forever.
+/_expo/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The shell must never be cached, or a deploy strands clients on old bundle URLs.
+/index.html
+  Cache-Control: no-cache

@@ -1,0 +1,18 @@
+node_modules/
+.expo/
+dist/
+coverage/
+android/
+ios/
+package-lock.json
+expo-env.d.ts
+
+# Generated from the database schema — never hand-edited, never formatted.
+src/core/database/types.generated.ts
+
+# Supabase CLI scratch space.
+supabase/.temp/
+supabase/.branches/
+
+assets/
+*.log
