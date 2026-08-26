@@ -56,7 +56,26 @@ export interface Database {
       }
     >;
     readonly Views: Record<never, { Row: Record<string, unknown>; Relationships: [] }>;
-    readonly Functions: Record<never, { Args: Record<string, unknown>; Returns: unknown }>;
+    /**
+     * Hand-declared for the RPCs the messaging surface calls until `db:types` regenerates the
+     * whole file from migrations. `Returns: Json` on `messaging_inbox_list` matches the SQL
+     * return type; the repository narrows it to its own DTO shape at the call site rather than
+     * spreading `Json` through the feature.
+     */
+    readonly Functions: {
+      readonly messaging_inbox_list: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      readonly messaging_seed_demo: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+      readonly messaging_mark_read: {
+        Args: { cid: string; up_to_seq: number };
+        Returns: void;
+      };
+    };
     readonly Enums: Record<never, string>;
     readonly CompositeTypes: Record<never, Record<string, unknown>>;
   };

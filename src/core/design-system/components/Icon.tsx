@@ -35,6 +35,7 @@ import ArrowLeft from 'lucide-react-native/icons/arrow-left';
 import ArrowRight from 'lucide-react-native/icons/arrow-right';
 import AtSign from 'lucide-react-native/icons/at-sign';
 import Bell from 'lucide-react-native/icons/bell';
+import BellOff from 'lucide-react-native/icons/bell-off';
 import Bookmark from 'lucide-react-native/icons/bookmark';
 import Briefcase from 'lucide-react-native/icons/briefcase';
 import Building2 from 'lucide-react-native/icons/building-2';
@@ -63,6 +64,7 @@ import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
 import Ellipsis from 'lucide-react-native/icons/ellipsis';
 import EllipsisVertical from 'lucide-react-native/icons/ellipsis-vertical';
 import Phone from 'lucide-react-native/icons/phone';
+import Pin from 'lucide-react-native/icons/pin';
 import Rocket from 'lucide-react-native/icons/rocket';
 import SquarePen from 'lucide-react-native/icons/square-pen';
 import Plus from 'lucide-react-native/icons/plus';
@@ -127,6 +129,9 @@ const REGISTRY = {
   refresh: RefreshCw,
   upload: Upload,
   notifications: Bell,
+  notificationsOff: BellOff,
+  /** Pinned-row mark in the messaging inbox. Named for the meaning, not the drawing. */
+  pinned: Pin,
   settings: Settings,
   profile: User,
   home: House,
