@@ -30,9 +30,11 @@
  */
 import { useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { haptic } from '@/core/haptics';
 
+import { usePressSpring } from '../hooks';
 import { createStyles } from '../theme';
 import { FocusRing } from './FocusRing';
 import { Icon } from './Icon';
@@ -114,6 +116,13 @@ export function IconButton({
   const [isHovered, setHovered] = useState(false);
   const [isFocused, setFocused] = useState(false);
 
+  // Slightly deeper depress than a Button: a 40pt icon target reads flat at 0.98, so pull it to
+  // 0.96 to match the perceived motion of a full-width red CTA.
+  const { animatedStyle, onPressIn, onPressOut } = usePressSpring({
+    disabled,
+    pressedScale: 0.96,
+  });
+
   const handlePress = useCallback(
     (_event: GestureResponderEvent) => {
       // Fired here rather than left to the caller, so the app's touch feel is a property of the
@@ -125,37 +134,41 @@ export function IconButton({
   );
 
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled}
-      hitSlop={HIT_SLOP[size]}
-      onHoverIn={() => {
-        setHovered(true);
-      }}
-      onHoverOut={() => {
-        setHovered(false);
-      }}
-      onFocus={() => {
-        setFocused(true);
-      }}
-      onBlur={() => {
-        setFocused(false);
-      }}
-      style={({ pressed }) => [
-        styles[size],
-        // Hover before press, so a pointer that is both hovering and pressing shows the stronger fill.
-        isHovered && !disabled && styles.hovered,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
-    >
-      <Icon name={name} size={GLYPH_SIZE[size]} tone={disabled ? 'disabled' : tone} />
-      <FocusRing visible={isFocused && !disabled} radius="full" />
-    </Pressable>
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled}
+        hitSlop={HIT_SLOP[size]}
+        onHoverIn={() => {
+          setHovered(true);
+        }}
+        onHoverOut={() => {
+          setHovered(false);
+        }}
+        onFocus={() => {
+          setFocused(true);
+        }}
+        onBlur={() => {
+          setFocused(false);
+        }}
+        style={({ pressed }) => [
+          styles[size],
+          // Hover before press, so a pointer that is both hovering and pressing shows the stronger fill.
+          isHovered && !disabled && styles.hovered,
+          pressed && styles.pressed,
+          disabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled }}
+      >
+        <Icon name={name} size={GLYPH_SIZE[size]} tone={disabled ? 'disabled' : tone} />
+        <FocusRing visible={isFocused && !disabled} radius="full" />
+      </Pressable>
+    </Animated.View>
   );
 }

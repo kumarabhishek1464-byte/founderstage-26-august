@@ -43,6 +43,7 @@ export { Marquee } from './Marquee';
 export { ProgressSteps } from './ProgressSteps';
 export { Screen } from './Screen';
 export { Select } from './Select';
+export { Sheet } from './Sheet';
 export { Skeleton } from './Skeleton';
 export { Spinner } from './Spinner';
 export { Stack } from './Stack';

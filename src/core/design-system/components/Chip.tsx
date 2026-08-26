@@ -35,9 +35,11 @@
  */
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { haptic } from '@/core/haptics';
 
+import { usePressSpring } from '../hooks';
 import { createStyles } from '../theme';
 import { FocusRing } from './FocusRing';
 import { Text } from './Text';
@@ -136,6 +138,10 @@ export function Chip({
   const isToggle = selected !== undefined;
   const isSelected = selected ?? false;
 
+  // The shared press spring — same physical response as `Button`, so a hero CTA and a filter chip
+  // feel like siblings rather than distant relatives.
+  const { animatedStyle, onPressIn, onPressOut } = usePressSpring({ disabled });
+
   const handlePress = useCallback(() => {
     // A toggle says which way it went; an action chip is just a tap. Same vocabulary as `Checkbox`.
     haptic(isToggle ? (isSelected ? 'toggleOff' : 'toggleOn') : 'tap');
@@ -160,37 +166,41 @@ export function Chip({
   }
 
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled}
-      hitSlop={HIT_SLOP[size]}
-      onHoverIn={() => {
-        setHovered(true);
-      }}
-      onHoverOut={() => {
-        setHovered(false);
-      }}
-      onFocus={() => {
-        setFocused(true);
-      }}
-      onBlur={() => {
-        setFocused(false);
-      }}
-      style={({ pressed }) => [
-        styles[size],
-        isHovered && !isSelected && !disabled && styles.hovered,
-        pressed && !isSelected && styles.pressed,
-        isSelected && styles.selected,
-        pressed && isSelected && styles.selectedPressed,
-        disabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole={isToggle ? 'checkbox' : 'button'}
-      accessibilityLabel={label}
-      accessibilityState={isToggle ? { checked: isSelected, disabled } : { disabled }}
-    >
-      {body}
-      <FocusRing visible={isFocused && !disabled} radius="full" />
-    </Pressable>
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled}
+        hitSlop={HIT_SLOP[size]}
+        onHoverIn={() => {
+          setHovered(true);
+        }}
+        onHoverOut={() => {
+          setHovered(false);
+        }}
+        onFocus={() => {
+          setFocused(true);
+        }}
+        onBlur={() => {
+          setFocused(false);
+        }}
+        style={({ pressed }) => [
+          styles[size],
+          isHovered && !isSelected && !disabled && styles.hovered,
+          pressed && !isSelected && styles.pressed,
+          isSelected && styles.selected,
+          pressed && isSelected && styles.selectedPressed,
+          disabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole={isToggle ? 'checkbox' : 'button'}
+        accessibilityLabel={label}
+        accessibilityState={isToggle ? { checked: isSelected, disabled } : { disabled }}
+      >
+        {body}
+        <FocusRing visible={isFocused && !disabled} radius="full" />
+      </Pressable>
+    </Animated.View>
   );
 }
