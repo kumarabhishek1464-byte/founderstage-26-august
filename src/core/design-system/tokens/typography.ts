@@ -2,12 +2,13 @@
  * Type carries the hierarchy in this design language. There is one accent colour and almost
  * no chrome, so if the type scale does not establish rank, nothing else will.
  *
- * **No `fontFamily`.** Omitting it yields SF Pro on iOS, Roboto on Android and the
- * `system-ui` stack on web — which is what "platform-native on iOS" asks for. Inter is named
- * as an option in the design language and is deliberately not loaded: a custom font puts
- * `expo-font` on the startup path, delays first paint, and flashes unstyled text on web, for
- * a difference most users cannot name. Adding it later is one change here — see
- * [ADR-0017 §2a](../../../../docs/adr/0017-token-schema.md).
+ * **Inter is the type family.** Loaded once at the root through `expo-font` and gated behind
+ * the splash screen so nothing on screen ever ships in the wrong face. Falling back to system
+ * (SF Pro / Roboto / `system-ui`) is honest — an unrecognised `fontFamily` string in RN
+ * simply defers to the platform default — so a device that fails to load a face renders the
+ * platform typeface rather than a broken glyph run. The names below are the exact identifiers
+ * `@expo-google-fonts/inter` registers under; changing them here without a matching `useFonts`
+ * key silently disables the family.
  *
  * Sizes are absolute rather than `rem`-like, because React Native has no root font size.
  * `allowFontScaling` stays at its default `true` everywhere, so OS text-size settings are
@@ -19,7 +20,8 @@ import type { TextStyle } from 'react-native';
 /**
  * Weights as string literals, which is what React Native expects. `'600'` renders as SF Pro
  * Semibold on iOS; on Android, Roboto has no 600 face, so the platform picks Medium (500) or
- * Bold (700) depending on API level. Accepted: the alternative is bundling a font.
+ * Bold (700) depending on API level — Inter carries a real face at every declared weight, so
+ * the mapping is exact once the family is loaded.
  */
 const WEIGHT = {
   regular: '400',
@@ -27,6 +29,19 @@ const WEIGHT = {
   semibold: '600',
   bold: '700',
 } as const satisfies Record<string, TextStyle['fontWeight']>;
+
+/**
+ * Family name per weight. React Native's `fontFamily` is a *single* string — no CSS stack — so
+ * each weight carries its own registered face. `fontWeight` is still set alongside for web,
+ * where `react-native-web` maps to CSS and Inter's variable font honours the numeric weight
+ * anyway. `FONT_FAMILY.regular` is the identity choice for every non-heading role.
+ */
+const FONT_FAMILY = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+} as const satisfies Record<keyof typeof WEIGHT, string>;
 
 /**
  * Negative tracking above ~20px and positive below ~13px. Large type set at 0 looks loose
@@ -42,12 +57,14 @@ const ROLES = {
    * Screen titles and marquee numbers. Sparingly — one per screen at most.
    */
   display: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: 32,
     lineHeight: 38,
     fontWeight: WEIGHT.bold,
     letterSpacing: -0.7,
   },
   title1: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: WEIGHT.semibold,
@@ -55,6 +72,7 @@ const ROLES = {
   },
   /** Section heading. */
   title2: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 22,
     lineHeight: 28,
     fontWeight: WEIGHT.semibold,
@@ -62,6 +80,7 @@ const ROLES = {
   },
   /** Card heading. */
   title3: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: WEIGHT.semibold,
@@ -69,6 +88,7 @@ const ROLES = {
   },
   /** A list row's primary line. Heavier than `body` at the same optical rank. */
   headline: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: WEIGHT.semibold,
@@ -76,6 +96,7 @@ const ROLES = {
   },
   /** Running prose. 15/22 — 1.47 leading, set for paragraphs rather than single lines. */
   body: {
+    fontFamily: FONT_FAMILY.regular,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: WEIGHT.regular,
@@ -83,6 +104,7 @@ const ROLES = {
   },
   /** Emphasis inside prose without changing rank. */
   bodyStrong: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: WEIGHT.semibold,
@@ -90,6 +112,7 @@ const ROLES = {
   },
   /** Field labels, tab titles, secondary rows. */
   subhead: {
+    fontFamily: FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: WEIGHT.medium,
@@ -97,6 +120,7 @@ const ROLES = {
   },
   /** Helper text under an input, timestamps. */
   footnote: {
+    fontFamily: FONT_FAMILY.regular,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: WEIGHT.regular,
@@ -104,6 +128,7 @@ const ROLES = {
   },
   /** Counts, metadata, the smallest legible size. */
   caption: {
+    fontFamily: FONT_FAMILY.regular,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: WEIGHT.regular,
@@ -115,6 +140,7 @@ const ROLES = {
    * accessible label stays sentence-case.
    */
   overline: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: WEIGHT.semibold,
@@ -125,6 +151,7 @@ const ROLES = {
    * red allows — 4.23:1, AA-large only, which is the open item in ADR-0017 §6.
    */
   label: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: WEIGHT.semibold,
@@ -134,6 +161,7 @@ const ROLES = {
 
 export const typography = {
   weight: WEIGHT,
+  fontFamily: FONT_FAMILY,
   ...ROLES,
 } as const;
 

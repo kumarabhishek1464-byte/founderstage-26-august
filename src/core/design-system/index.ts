@@ -31,3 +31,10 @@ export * from './components';
 export { ThemeProvider, useTheme, createStyles, useBreakpoint } from './theme';
 
 export type { Theme, ThemeColors } from './theme';
+
+/**
+ * Hooks the design system publishes for cross-cutting interaction feel — the shared press spring
+ * every button, chip and row in the app breathes with. Exposed at the same depth as the components
+ * because a feature that composes a bespoke pressable surface needs the same physical response.
+ */
+export * from './hooks';

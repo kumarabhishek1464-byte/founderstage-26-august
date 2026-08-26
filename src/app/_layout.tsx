@@ -1,6 +1,15 @@
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 /**
  * Foundation root layout.
@@ -23,14 +32,16 @@ import { ThemeProvider, useTheme } from '@/core/design-system';
 import { logger } from '@/core/observability';
 
 /**
+ * Held at module scope so a fast-refresh mount does not race the initial one. Wrapped in a
+ * try/catch because it throws on the second call (harmlessly, but noisily).
+ */
+void SplashScreen.preventAutoHideAsync().catch(() => {
+  // Already prevented on this JS instance — nothing to do.
+});
+
+/**
  * Module scope, not an effect: this runs once when the bundle is evaluated, which is what
  * "the app started" actually means. An effect would additionally re-run on remount.
- *
- * `info`, so it is suppressed in a production build (which logs at `warn`) — correctly.
- * This line exists to answer "which project and which level am I actually pointed at"
- * while developing; in production that context arrives as Sentry tags on every event, not
- * as a log line nobody reads. Nothing here is a credential: the environment name, the
- * level and the platform are all build configuration.
  */
 logger.info('FounderStage starting', {
   environment: env.EXPO_PUBLIC_ENV,
@@ -70,6 +81,39 @@ function RootStack() {
 }
 
 export default function RootLayout() {
+  /**
+   * Inter is loaded here, at the tree root, so every `Text` further down speaks in the same
+   * face. The names below are the exact identifiers the typography tokens reference in
+   * `fontFamily`; if the two ever drift, glyphs render in the platform default and the type
+   * system does not catch it — that is why the family map lives in a single tokens file and
+   * the loader keys reference the same identifiers.
+   *
+   * `fontError` is intentionally not fatal. A device that fails to fetch a webfont should
+   * render the platform typeface rather than an empty screen: Inter's proportions match SF
+   * Pro closely enough that a fallback run is a graceful degradation, not a broken app.
+   */
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError !== null) {
+      // Fire-and-forget: the promise resolves after the fade completes, and nothing here
+      // waits on it. A rejection would only mean the splash is already gone.
+      void SplashScreen.hideAsync().catch(() => {
+        // Ignored — the splash was already hidden.
+      });
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && fontError === null) {
+    // Keep the splash visible until either the family loads or we know it will not.
+    return null;
+  }
+
   return (
     <ThemeProvider>
       {/* Dark glyphs on white chrome. No dark mode — ADR-0013.

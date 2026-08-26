@@ -227,6 +227,13 @@ const SIZE_TOKEN: Readonly<Record<IconSize, (t: Theme) => number>> = {
   lg: (t) => t.size.iconLg,
 };
 
+/**
+ * The stroke weight for every icon in the app. Lucide ships at 2.0; 1.5 is the "Apple line-icon"
+ * register — noticeably lighter, and what makes the icon set read as considered rather than default.
+ * One number, one place, so a family-wide retune is a single edit.
+ */
+const STROKE_WIDTH = 1.5;
+
 export function Icon({
   name,
   size = 'md',
@@ -242,9 +249,10 @@ export function Icon({
     <Glyph
       width={SIZE_TOKEN[size](theme)}
       height={SIZE_TOKEN[size](theme)}
-      // Lucide sets `stroke` from `color`; `strokeWidth` is left at the family default of 2, which is
-      // what keeps a single-family look. Overriding it per-icon is how an icon set stops matching.
+      // Lucide sets `stroke` from `color`; `strokeWidth` is authored globally in this component so
+      // every icon speaks with the same voice — see the constant above.
       color={toneColor(theme, tone)}
+      strokeWidth={STROKE_WIDTH}
       style={style}
       // `accessible` is what makes the SVG a single accessibility element. Lucide's glyphs are two or
       // three `<Path>`/`<Circle>` children, and react-native-svg copies `accessibilityLabel` onto all

@@ -31,9 +31,11 @@
  * implementation — is a visible jump on every form submission in the app.
  */
 import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { haptic } from '@/core/haptics';
 
+import { usePressSpring } from '../hooks';
 import { createStyles } from '../theme';
 import { Spinner } from './Spinner';
 import { Text } from './Text';
@@ -258,6 +260,13 @@ export function Button({
   // database, not a cosmetic bug. Collapsed here rather than asked of every call site.
   const isInert = disabled || loading;
 
+  /**
+   * The shared press spring — every pressable primitive in the app reaches for the same hook, so
+   * the physical response is identical from a hero CTA to a filter chip. Disabled while inert so a
+   * blocked press does not still animate, which would read as "the button worked" when it didn't.
+   */
+  const { animatedStyle, onPressIn, onPressOut } = usePressSpring({ disabled: isInert });
+
   function handlePress(): void {
     // Fired here, not in the caller's handler, so every button in the app feels the same and no
     // screen has to remember. `tap` is the semantic name; the physical effect lives in core/haptics.
@@ -266,45 +275,56 @@ export function Button({
   }
 
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={isInert}
-      hitSlop={{ top: HIT_SLOP[size], bottom: HIT_SLOP[size] }}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={accessibilityHint}
-      // `disabled` and `busy` are separate states on purpose: a screen reader says "dimmed" for one
-      // and "busy" for the other, and conflating them loses the distinction the props preserve.
-      accessibilityState={{ disabled: isInert, busy: loading }}
-      style={({ pressed }) => [
-        styles.base,
-        styles[SHAPE_STYLE[shape]],
-        styles[SIZE_STYLE[size]],
-        styles[spec.container],
-        pressed && styles[spec.containerPressed],
-        fullWidth && styles.fullWidth,
-        isInert && styles.disabled,
-        style,
-      ]}
-    >
-      <View style={[styles.content, loading && styles.contentHidden]}>
-        {iconLeft}
-        <Text variant={size === 'lg' ? 'headline' : 'label'} tone={spec.textTone}>
-          {label}
-        </Text>
-        {iconRight}
-      </View>
-
-      {loading && (
-        <View style={styles.spinnerOverlay}>
-          {/*
-            No `accessibilityLabel` on the spinner: `accessibilityState.busy` on the Pressable
-            already announces the wait, and a nested "Loading" would be read as a second element
-            inside the button.
-          */}
-          <Spinner size="sm" tone={spec.spinnerTone} accessibilityLabel="" />
+    /*
+     * The scale transform lives on an `Animated.View` **around** the `Pressable`, not on the
+     * `Pressable` itself. `react-native-web` renders `Pressable` as a `<button>` where a transform
+     * can suppress focus outlines; the wrapper is always a plain view and is safe to transform.
+     * The wrapper also carries `fullWidth`, so the animation and the layout stay aligned.
+     */
+    <Animated.View style={[animatedStyle, fullWidth && styles.fullWidth]}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={isInert}
+        hitSlop={{ top: HIT_SLOP[size], bottom: HIT_SLOP[size] }}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={accessibilityHint}
+        // `disabled` and `busy` are separate states on purpose: a screen reader says "dimmed" for
+        // one and "busy" for the other, and conflating them loses the distinction the props
+        // preserve.
+        accessibilityState={{ disabled: isInert, busy: loading }}
+        style={({ pressed }) => [
+          styles.base,
+          styles[SHAPE_STYLE[shape]],
+          styles[SIZE_STYLE[size]],
+          styles[spec.container],
+          pressed && styles[spec.containerPressed],
+          fullWidth && styles.fullWidth,
+          isInert && styles.disabled,
+          style,
+        ]}
+      >
+        <View style={[styles.content, loading && styles.contentHidden]}>
+          {iconLeft}
+          <Text variant={size === 'lg' ? 'headline' : 'label'} tone={spec.textTone}>
+            {label}
+          </Text>
+          {iconRight}
         </View>
-      )}
-    </Pressable>
+
+        {loading && (
+          <View style={styles.spinnerOverlay}>
+            {/*
+              No `accessibilityLabel` on the spinner: `accessibilityState.busy` on the Pressable
+              already announces the wait, and a nested "Loading" would be read as a second element
+              inside the button.
+            */}
+            <Spinner size="sm" tone={spec.spinnerTone} accessibilityLabel="" />
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
