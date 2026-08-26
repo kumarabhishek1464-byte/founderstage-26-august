@@ -37,11 +37,6 @@ const useStyles = createStyles((t) => ({
     backgroundColor: t.colors.surface.primary,
     borderColor: t.colors.border.subtle,
   },
-  submitButtonDisabled: {
-    backgroundColor: t.colors.text.tertiary,
-    borderColor: t.colors.text.tertiary,
-    opacity: 1,
-  },
 }));
 
 export function LoginView({ onSubmit, onSignup }: LoginViewProps) {
@@ -129,12 +124,11 @@ export function LoginView({ onSubmit, onSignup }: LoginViewProps) {
         <Button
           label="Continue"
           size="lg"
-          variant={isValid ? 'dark' : 'primary'}
+          variant="primary"
           fullWidth
           disabled={!isValid}
           loading={isSubmitting}
           onPress={submit}
-          style={!isValid ? styles.submitButtonDisabled : undefined}
         />
         <OrDivider />
         <Button

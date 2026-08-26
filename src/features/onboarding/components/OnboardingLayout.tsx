@@ -1,7 +1,10 @@
 /**
- * `OnboardingLayout` — shared chrome for onboarding screens matching the reference designs.
+ * `OnboardingLayout` — shared chrome for onboarding screens.
+ *
+ * Premium chrome: a "Step X of N" pill sits above the wordmark to give the user a durable
+ * sense of place; the CTA is the scarce red primary and every step ends in it.
  */
-import { Button, Icon, PaginationDots, Stack, Text, Wordmark } from '@/core/design-system';
+import { Button, createStyles, Icon, PaginationDots, Stack, Text, Wordmark } from '@/core/design-system';
 
 import type { IconName } from '@/core/design-system';
 import type { ReactNode } from 'react';
@@ -25,6 +28,16 @@ interface OnboardingLayoutProps {
   readonly footnoteIcon?: IconName;
 }
 
+const useStyles = createStyles((t) => ({
+  stepPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: t.spacing.xxs,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.surface.accentSubtle,
+  },
+}));
+
 export function OnboardingLayout({
   step,
   title,
@@ -36,10 +49,19 @@ export function OnboardingLayout({
   footnote,
   footnoteIcon,
 }: OnboardingLayoutProps) {
+  const styles = useStyles();
+
   return (
     <Stack gap="xl2">
       <Stack gap="xl">
-        <Wordmark />
+        <Stack direction="row" align="center" justify="between">
+          <Wordmark />
+          <Stack style={styles.stepPill}>
+            <Text variant="overline" tone="accent">
+              {`Step ${String(step)} of ${String(ONBOARDING_STEPS)}`}
+            </Text>
+          </Stack>
+        </Stack>
 
         <Stack gap="xxs">
           <Text variant="title1" tone="heading">
@@ -57,10 +79,11 @@ export function OnboardingLayout({
         <Button
           label={ctaLabel}
           size="lg"
-          variant="dark"
+          variant="primary"
           fullWidth
           disabled={!canContinue}
           onPress={onContinue}
+          iconRight={<Icon name="forward" size="md" tone="inverse" />}
         />
 
         <PaginationDots total={ONBOARDING_STEPS} current={step} />
