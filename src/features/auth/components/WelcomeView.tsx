@@ -20,9 +20,6 @@ const useStyles = createStyles((t) => ({
     paddingHorizontal: t.spacing.xl,
     paddingBottom: t.spacing.xs,
   },
-  titleText: {
-    textAlign: 'center',
-  },
 }));
 
 export function WelcomeView({ onJoin }: WelcomeViewProps) {
@@ -33,16 +30,14 @@ export function WelcomeView({ onJoin }: WelcomeViewProps) {
       <WelcomeHero />
 
       <Stack gap="md" style={styles.content}>
-        {/* Centered headline */}
-        <Stack align="center">
-          <Text variant="title1" tone="heading" style={styles.titleText}>
-            {'The Operating\nSystem for the '}
-            <Text variant="title1" tone="accent">
-              serious
-            </Text>
-            {'\nFounders & Builders.'}
+        {/* Left-aligned two-tone headline matching the reference: the leading phrase reads as an
+            attribution in the muted grey, and the rest lands in near-black. */}
+        <Text variant="title1" tone="heading" align="left">
+          <Text variant="title1" tone="tertiary">
+            {'The Operating System '}
           </Text>
-        </Stack>
+          {'for a curated network of founders, investors, coaches and innovators.'}
+        </Text>
 
         {/* Action Button */}
         <Stack gap="xs">

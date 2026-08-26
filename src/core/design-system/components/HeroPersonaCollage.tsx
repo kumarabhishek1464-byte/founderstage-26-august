@@ -1,15 +1,19 @@
 /**
- * `HeroPersonaCollage` — dynamic floating circular member portrait bubbles with role badges.
+ * `HeroPersonaCollage` — floating founder-ecosystem member cards that appear and disappear
+ * in a staggered loop. Matches the Circle-by-CRED signed-out reference layout.
  *
- * Implements the signature "Circle by CRED" experience:
- * - 9 circular member portrait bubbles with healthy, expansive spacing matching the reference layout.
- * - Layered badges on key cards ("Founder mode", "All things parenting", and "..." reaction pill).
- * - Auto-rotation: cards dynamically disappear with a gentle scale/fade out, swap to a new persona from the pool,
- *   and spring bounce in.
- * - Continuous subtle floating breathing motion for an alive, organic presence.
- * - Responsive layout adapting smoothly to mobile, tablet, and desktop viewports.
+ * Two animation layers per card, so the motion reads as "somebody stepped into frame" rather
+ * than "a picture opacity crossfaded":
+ *
+ *   1. Image layer. Fades and springs in on entry, fades and scales down on exit.
+ *   2. Label pill layer. Slides up from below and fades in ~220 ms after the image, and leaves
+ *      first on exit — the way a name tag reads after a face, and un-reads before it.
+ *
+ * Every cycle picks a new persona from the pool and a new size within a small variance so the
+ * layout breathes without moving. The visible gap between exit and re-entry is deliberate:
+ * empty space is part of the composition, not an animation seam to be hidden.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, Platform, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 
@@ -18,357 +22,413 @@ import { Text } from './Text';
 
 import type { StyleProp, ViewStyle } from 'react-native';
 
+// `useNativeDriver: true` on web moves the animation off the JS thread it does not have,
+// producing a warning per animation. Keep it native-only.
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
-export interface Persona {
+interface Persona {
   readonly id: string;
   readonly role: string;
-  readonly badgeText?: string;
   readonly imageUri: string;
 }
 
-// Extensive pool of diverse founder, investor, mentor, and builder personas
+// Startup-ecosystem roles paired with license-free Pexels portraits.
+// The pool is intentionally larger than the number of slots (18 > 9) so cycling has room
+// to avoid immediate repeats without a coordination table between slots.
 const PERSONA_POOL: readonly Persona[] = [
   {
-    id: 'p1',
+    id: 'founder-1',
     role: 'Founder',
     imageUri:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/12311562/pexels-photo-12311562.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p2',
+    id: 'cofounder-1',
     role: 'Co-founder',
     imageUri:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/30496625/pexels-photo-30496625.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p3',
+    id: 'investor-1',
     role: 'Investor',
-    badgeText: 'Founder\nmode',
     imageUri:
-      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/12989198/pexels-photo-12989198.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p4',
+    id: 'angel-1',
     role: 'Angel Investor',
     imageUri:
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/37148308/pexels-photo-37148308.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p5',
+    id: 'mentor-1',
     role: 'Mentor',
     imageUri:
-      'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/38197025/pexels-photo-38197025.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p6',
+    id: 'advisor-1',
     role: 'Advisor',
     imageUri:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/27086916/pexels-photo-27086916.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p7',
+    id: 'coach-1',
     role: 'Coach',
-    badgeText: 'All things\nparenting',
     imageUri:
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/13801472/pexels-photo-13801472.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p8',
+    id: 'innovator-1',
     role: 'Innovator',
     imageUri:
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/30161439/pexels-photo-30161439.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p9',
+    id: 'operator-1',
     role: 'Operator',
     imageUri:
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/18032391/pexels-photo-18032391.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p10',
-    role: 'Tech Lead',
-    imageUri:
-      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&auto=format&fit=crop&q=85',
-  },
-  {
-    id: 'p11',
-    role: 'Venture Partner',
-    badgeText: 'Series A\nlead',
-    imageUri:
-      'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&auto=format&fit=crop&q=85',
-  },
-  {
-    id: 'p12',
+    id: 'product-lead',
     role: 'Product Lead',
     imageUri:
-      'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/37070438/pexels-photo-37070438.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p13',
-    role: 'Growth VP',
-    badgeText: '0 to 1M\nusers',
+    id: 'growth-lead',
+    role: 'Growth Lead',
     imageUri:
-      'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/29852895/pexels-photo-29852895.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p14',
-    role: 'AI Researcher',
+    id: 'builder',
+    role: 'Builder',
     imageUri:
-      'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/37218483/pexels-photo-37218483.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
   {
-    id: 'p15',
-    role: 'Design Partner',
+    id: 'vc-partner',
+    role: 'VC Partner',
     imageUri:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop&q=85',
+      'https://images.pexels.com/photos/39058025/pexels-photo-39058025.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    id: 'scout',
+    role: 'Scout',
+    imageUri:
+      'https://images.pexels.com/photos/10174456/pexels-photo-10174456.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    id: 'solopreneur',
+    role: 'Solopreneur',
+    imageUri:
+      'https://images.pexels.com/photos/8872700/pexels-photo-8872700.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    id: 'community-lead',
+    role: 'Community Lead',
+    imageUri:
+      'https://images.pexels.com/photos/37079379/pexels-photo-37079379.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    id: 'engineer',
+    role: 'Engineer',
+    imageUri:
+      'https://images.pexels.com/photos/12311567/pexels-photo-12311567.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  },
+  {
+    id: 'designer',
+    role: 'Designer',
+    imageUri:
+      'https://images.pexels.com/photos/11655430/pexels-photo-11655430.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   },
 ];
 
-interface CircularSlotLayout {
-  readonly topPercent: number;
-  readonly leftPercent?: number;
-  readonly rightPercent?: number;
-  readonly sizeRatio: number;
-  readonly showDotsPill?: boolean;
+interface SlotLayout {
+  /** Card centre X as a fraction of the container width. */
+  readonly cx: number;
+  /** Card centre Y as a fraction of the container height. */
+  readonly cy: number;
+  /** Card width as a fraction of the container width. */
+  readonly width: number;
+  /** Only one slot renders the CRED-signature "..." chat pill. */
+  readonly showChatPill?: boolean;
+  /** Initial delay before this slot's first appear, in ms. */
+  readonly startDelay: number;
+  /** Visible dwell time, in ms. Each slot is different so their cycles never sync. */
+  readonly holdMs: number;
 }
 
-// 9 circular bubble slots with healthy, un-congested spacing matching the reference layout
-const CIRCULAR_SLOTS: readonly CircularSlotLayout[] = [
-  // 0: Top-center (Large Founder)
-  { topPercent: 0.02, leftPercent: 0.35, sizeRatio: 0.3 },
-  // 1: Top-left (Medium Co-founder with ... dots pill)
-  { topPercent: 0.14, leftPercent: 0.03, sizeRatio: 0.275, showDotsPill: true },
-  // 2: Top-right (Medium-large Investor with "Founder mode" badge)
-  { topPercent: 0.15, rightPercent: 0.03, sizeRatio: 0.28 },
-  // 3: Center (Medium Angel Investor)
-  { topPercent: 0.33, leftPercent: 0.375, sizeRatio: 0.25 },
-  // 4: Mid-left (Small-medium Mentor)
-  { topPercent: 0.44, leftPercent: 0.04, sizeRatio: 0.225 },
-  // 5: Mid-right (Large-medium Advisor)
-  { topPercent: 0.42, rightPercent: 0.03, sizeRatio: 0.28 },
-  // 6: Lower-center (Large Coach with "All things parenting" badge)
-  { topPercent: 0.55, leftPercent: 0.345, sizeRatio: 0.305 },
-  // 7: Lower-left (Small Innovator)
-  { topPercent: 0.72, leftPercent: 0.11, sizeRatio: 0.155 },
-  // 8: Lower-right (Small Operator)
-  { topPercent: 0.74, rightPercent: 0.11, sizeRatio: 0.165 },
+// Nine slots — three loose rows around the central Angel Investor. Coordinates were chosen
+// against the reference at 375-wide; other widths scale proportionally.
+const SLOTS: readonly SlotLayout[] = [
+  { cx: 0.5, cy: 0.11, width: 0.3, startDelay: 0, holdMs: 4200 },
+  { cx: 0.19, cy: 0.24, width: 0.26, startDelay: 260, holdMs: 4600 },
+  { cx: 0.81, cy: 0.24, width: 0.26, startDelay: 520, holdMs: 3900 },
+  { cx: 0.5, cy: 0.42, width: 0.29, showChatPill: true, startDelay: 780, holdMs: 5200 },
+  { cx: 0.16, cy: 0.5, width: 0.24, startDelay: 1040, holdMs: 4400 },
+  { cx: 0.84, cy: 0.5, width: 0.24, startDelay: 1300, holdMs: 4100 },
+  { cx: 0.5, cy: 0.68, width: 0.27, startDelay: 1560, holdMs: 4800 },
+  { cx: 0.18, cy: 0.75, width: 0.24, startDelay: 1820, holdMs: 4300 },
+  { cx: 0.82, cy: 0.75, width: 0.25, startDelay: 2080, holdMs: 4700 },
 ];
 
+const CARD_ASPECT = 1.15;
+const SIZE_VARIANCE_MIN = 0.92;
+const SIZE_VARIANCE_RANGE = 0.16;
+const RE_APPEAR_GAP_MIN = 650;
+const RE_APPEAR_GAP_RANGE = 550;
+
 const useStyles = createStyles((t) => ({
-  circleWrapper: {
+  wrapper: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleCard: {
+  card: {
     width: '100%',
     height: '100%',
-    borderRadius: t.radius.full,
+    borderRadius: t.radius.lg,
     backgroundColor: t.colors.surface.tertiary,
     overflow: 'hidden',
     shadowColor: t.colors.text.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
     elevation: 6,
-    borderWidth: 2,
-    borderColor: t.colors.surface.primary,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: t.radius.full,
   },
-  badge: {
+  labelWrapper: {
     position: 'absolute',
-    bottom: -10,
+    bottom: -t.spacing.xs,
+    left: -t.spacing.xxs,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: t.colors.surface.primary,
     paddingHorizontal: t.spacing.sm,
-    paddingVertical: 5,
-    borderRadius: t.radius.md,
-    borderWidth: t.border.hairline,
-    borderColor: t.colors.border.subtle,
+    paddingVertical: 6,
+    borderRadius: t.radius.full,
     shadowColor: t.colors.text.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  labelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.text.accent,
+    marginRight: t.spacing.xxs,
+  },
+  chatPill: {
+    position: 'absolute',
+    right: -t.spacing.md,
+    top: '30%',
+    backgroundColor: t.colors.surface.primary,
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: 6,
+    borderRadius: t.radius.full,
+    shadowColor: t.colors.text.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 34,
   },
-  badgeText: {
-    textAlign: 'center',
-  },
-  dotsPill: {
-    position: 'absolute',
-    right: -4,
-    bottom: 6,
-    backgroundColor: t.colors.surface.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: t.radius.full,
-    borderWidth: t.border.hairline,
-    borderColor: t.colors.border.subtle,
-    shadowColor: t.colors.text.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  chatPillText: {
+    letterSpacing: 2,
+    lineHeight: 12,
   },
 }));
 
-interface AnimatedCircleCardProps {
-  readonly slot: CircularSlotLayout;
-  readonly persona: Persona;
+interface AnimatedCardProps {
+  readonly slot: SlotLayout;
   readonly slotIndex: number;
   readonly containerWidth: number;
   readonly containerHeight: number;
 }
 
-function AnimatedCircleCard({
-  slot,
-  persona,
-  slotIndex,
-  containerWidth,
-  containerHeight,
-}: AnimatedCircleCardProps) {
+function AnimatedCard({ slot, slotIndex, containerWidth, containerHeight }: AnimatedCardProps) {
   const styles = useStyles();
   const theme = useTheme();
 
-  // Animation values stored in state for stable identity and strict React refs compliance
-  const [scale] = useState(() => new Animated.Value(1));
-  const [opacity] = useState(() => new Animated.Value(1));
-  const [floatAnim] = useState(() => new Animated.Value(0));
+  // Layer 1: the image card itself. `useState(() => new Animated.Value(...))` rather than
+  // `useRef` because the React Compiler lint bans reading a ref's current value during render,
+  // and an `Animated.Value` object is passed straight to `style` from render.
+  const [imageOpacity] = useState(() => new Animated.Value(0));
+  const [imageScale] = useState(() => new Animated.Value(0.7));
 
-  // Current displaying persona in this card
-  const [currentPersona, setCurrentPersona] = useState(persona);
+  // Layer 2: the name pill. Springs up from below the card, arrives slightly after the face.
+  const [labelOpacity] = useState(() => new Animated.Value(0));
+  const [labelTranslate] = useState(() => new Animated.Value(10));
 
-  // Staggered continuous breathing float for organic feel
+  // Current persona and size multiplier. Both change on every cycle so a re-appearing card
+  // reads as a different person at a slightly different size, per the design brief.
+  const [persona, setPersona] = useState<Persona>(
+    () => PERSONA_POOL[slotIndex % PERSONA_POOL.length]!
+  );
+  const [sizeMultiplier, setSizeMultiplier] = useState(1);
+
   useEffect(() => {
-    const delay = (slotIndex % 3) * 380;
-    const duration = 2800 + (slotIndex % 4) * 300;
+    let disposed = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    const floatLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: -4,
-          duration,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: USE_NATIVE_DRIVER,
-          delay,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 3,
-          duration,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: USE_NATIVE_DRIVER,
-        }),
-      ])
-    );
+    // Rotate this slot's own cursor through the pool with a prime step size so consecutive
+    // cycles pick visibly different faces even before the parent's shuffle kicks in.
+    let cursor = slotIndex;
 
-    floatLoop.start();
-    return () => {
-      floatLoop.stop();
+    const scheduleNext = (delay: number, run: () => void) => {
+      const t = setTimeout(() => {
+        if (!disposed) run();
+      }, delay);
+      timers.push(t);
     };
-  }, [floatAnim, slotIndex]);
 
-  // Premium CRED Circle transition: Smooth disappear -> swap persona -> spring appear
-  useEffect(() => {
-    if (persona.id === currentPersona.id) {
-      return;
-    }
-
-    // Step 1: Smooth fade & scale out
-    Animated.parallel([
-      Animated.timing(scale, {
-        toValue: 0.75,
-        duration: 260,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: USE_NATIVE_DRIVER,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 220,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: USE_NATIVE_DRIVER,
-      }),
-    ]).start(() => {
-      // Step 2: Swap the persona data
-      setCurrentPersona(persona);
-
-      // Step 3: Spring bounce in with new persona
-      scale.setValue(0.7);
+    const appear = () => {
       Animated.parallel([
-        Animated.spring(scale, {
+        Animated.timing(imageOpacity, {
           toValue: 1,
-          friction: 5.5,
-          tension: 48,
+          duration: 520,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
-        Animated.timing(opacity, {
+        Animated.spring(imageScale, {
           toValue: 1,
-          duration: 300,
-          easing: Easing.out(Easing.quad),
+          friction: 6.5,
+          tension: 55,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
+        Animated.sequence([
+          Animated.delay(220),
+          Animated.parallel([
+            Animated.timing(labelOpacity, {
+              toValue: 1,
+              duration: 320,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+            Animated.spring(labelTranslate, {
+              toValue: 0,
+              friction: 7,
+              tension: 90,
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+          ]),
+        ]),
       ]).start();
-    });
-  }, [persona, currentPersona.id, scale, opacity]);
 
-  const circleDiameter = Math.round(containerWidth * slot.sizeRatio);
-  const topPos = Math.round(containerHeight * slot.topPercent);
+      scheduleNext(slot.holdMs, disappear);
+    };
 
-  const posStyle: StyleProp<ViewStyle> = {
-    top: topPos,
-    width: circleDiameter,
-    height: circleDiameter,
-    ...(slot.leftPercent !== undefined
-      ? { left: Math.round(containerWidth * slot.leftPercent) }
-      : {}),
-    ...(slot.rightPercent !== undefined
-      ? { right: Math.round(containerWidth * slot.rightPercent) }
-      : {}),
-  };
+    const disappear = () => {
+      Animated.parallel([
+        // Label leaves first: the name tag hides before the face is fully gone.
+        Animated.parallel([
+          Animated.timing(labelOpacity, {
+            toValue: 0,
+            duration: 220,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(labelTranslate, {
+            toValue: 10,
+            duration: 220,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.delay(80),
+          Animated.parallel([
+            Animated.timing(imageOpacity, {
+              toValue: 0,
+              duration: 360,
+              easing: Easing.in(Easing.cubic),
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+            Animated.timing(imageScale, {
+              toValue: 0.85,
+              duration: 360,
+              easing: Easing.in(Easing.cubic),
+              useNativeDriver: USE_NATIVE_DRIVER,
+            }),
+          ]),
+        ]),
+      ]).start(() => {
+        if (disposed) return;
 
-  const badgeText = currentPersona.badgeText;
+        // Off-screen swap. New face, new size — same slot.
+        cursor = (cursor + 5) % PERSONA_POOL.length;
+        setPersona(PERSONA_POOL[cursor]!);
+        setSizeMultiplier(SIZE_VARIANCE_MIN + Math.random() * SIZE_VARIANCE_RANGE);
+        imageScale.setValue(0.72);
+
+        const gap = RE_APPEAR_GAP_MIN + Math.random() * RE_APPEAR_GAP_RANGE;
+        scheduleNext(gap, appear);
+      });
+    };
+
+    // Initial staggered entrance.
+    scheduleNext(slot.startDelay, appear);
+
+    return () => {
+      disposed = true;
+      for (const t of timers) clearTimeout(t);
+    };
+  }, [imageOpacity, imageScale, labelOpacity, labelTranslate, slot.holdMs, slot.startDelay, slotIndex]);
+
+  const baseWidth = containerWidth * slot.width;
+  const width = Math.round(baseWidth * sizeMultiplier);
+  const height = Math.round(width * CARD_ASPECT);
+  const left = Math.round(containerWidth * slot.cx - width / 2);
+  const top = Math.round(containerHeight * slot.cy - height / 2);
+
+  const positionStyle: StyleProp<ViewStyle> = { top, left, width, height };
 
   return (
     <Animated.View
       style={[
-        styles.circleWrapper,
-        posStyle,
-        {
-          transform: [{ translateY: floatAnim }, { scale }],
-          opacity,
-        },
+        styles.wrapper,
+        positionStyle,
+        { opacity: imageOpacity, transform: [{ scale: imageScale }] },
       ]}
+      pointerEvents="none"
     >
-      <View style={styles.circleCard}>
+      <View style={styles.card}>
         <Image
-          source={{ uri: currentPersona.imageUri }}
+          source={{ uri: persona.imageUri }}
           style={styles.image}
           contentFit="cover"
-          transition={theme.motion.duration.fast}
+          transition={theme.motion.duration.medium}
         />
       </View>
 
-      {/* Floating badge for prominent personas */}
-      {badgeText !== undefined ? (
-        <View style={styles.badge}>
-          <Text variant="caption" tone="heading" style={styles.badgeText}>
-            {badgeText}
-          </Text>
-        </View>
-      ) : null}
+      <Animated.View
+        style={[
+          styles.labelWrapper,
+          { opacity: labelOpacity, transform: [{ translateY: labelTranslate }] },
+        ]}
+      >
+        <View style={styles.labelDot} />
+        <Text variant="caption" tone="heading">
+          {persona.role}
+        </Text>
+      </Animated.View>
 
-      {/* Floating 3-dots conversation pill */}
-      {slot.showDotsPill ? (
-        <View style={styles.dotsPill}>
-          <Text variant="caption" tone="secondary">
-            ...
+      {slot.showChatPill ? (
+        <Animated.View style={[styles.chatPill, { opacity: labelOpacity }]}>
+          <Text variant="caption" tone="tertiary" style={styles.chatPillText}>
+            •••
           </Text>
-        </View>
+        </Animated.View>
       ) : null}
     </Animated.View>
   );
@@ -377,41 +437,9 @@ function AnimatedCircleCard({
 export function HeroPersonaCollage() {
   const { width: windowWidth } = useWindowDimensions();
 
-  // Expansive width and height that gives generous breathing room to all 9 circles
-  const containerWidth = Math.min(windowWidth - 16, 400);
-  const containerHeight = Math.round(containerWidth * 1.28);
-
-  // Active personas occupying the 9 slots
-  const [activePersonas, setActivePersonas] = useState<readonly Persona[]>(() =>
-    PERSONA_POOL.slice(0, 9)
-  );
-
-  // Pool rotation index tracker
-  const nextPoolIndex = useRef(9);
-
-  // Periodic card replacement: Select a slot, animate out and in a new persona
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Pick a random slot to refresh
-      const targetSlot = Math.floor(Math.random() * 9);
-
-      // Get next persona from the pool
-      const newPersona = PERSONA_POOL[nextPoolIndex.current % PERSONA_POOL.length];
-      nextPoolIndex.current += 1;
-
-      if (newPersona !== undefined) {
-        setActivePersonas((prev) => {
-          const next = [...prev];
-          next[targetSlot] = newPersona;
-          return next;
-        });
-      }
-    }, 2400);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  // Cap at 420 so on tablet the collage stays composed rather than spreading edge to edge.
+  const containerWidth = Math.min(windowWidth, 420);
+  const containerHeight = Math.round(containerWidth * 1.32);
 
   return (
     <View
@@ -422,19 +450,15 @@ export function HeroPersonaCollage() {
         position: 'relative',
       }}
     >
-      {CIRCULAR_SLOTS.map((slot, index) => {
-        const persona = activePersonas[index] ?? PERSONA_POOL[index]!;
-        return (
-          <AnimatedCircleCard
-            key={`slot-${index}`}
-            slot={slot}
-            persona={persona}
-            slotIndex={index}
-            containerWidth={containerWidth}
-            containerHeight={containerHeight}
-          />
-        );
-      })}
+      {SLOTS.map((slot, index) => (
+        <AnimatedCard
+          key={`slot-${index}`}
+          slot={slot}
+          slotIndex={index}
+          containerWidth={containerWidth}
+          containerHeight={containerHeight}
+        />
+      ))}
     </View>
   );
 }
