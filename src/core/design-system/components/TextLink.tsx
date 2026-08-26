@@ -26,9 +26,11 @@
  */
 import { useCallback, useState } from 'react';
 import { Pressable } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { haptic } from '@/core/haptics';
 
+import { usePressSpring } from '../hooks';
 import { createStyles } from '../theme';
 import { FocusRing } from './FocusRing';
 import { Text } from './Text';
@@ -75,41 +77,56 @@ export function TextLink({
   const styles = useStyles();
   const [isFocused, setFocused] = useState(false);
 
+  /**
+   * The shared press spring, dialled to 0.97 for a link rather than the 0.98 the buttons use. A
+   * link is a smaller target than a button — a single line of body text next to prose — and 0.98
+   * on a 20pt-tall hit area reads as no motion at all. 0.97 is still contained enough not to
+   * shift the surrounding line.
+   */
+  const { animatedStyle, onPressIn, onPressOut } = usePressSpring({
+    disabled,
+    pressedScale: 0.97,
+  });
+
   const handlePress = useCallback(() => {
     haptic('tap');
     onPress();
   }, [onPress]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled}
-      hitSlop={HIT_SLOP}
-      onFocus={() => {
-        setFocused(true);
-      }}
-      onBlur={() => {
-        setFocused(false);
-      }}
-      style={({ pressed }) => [
-        styles.frame,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled }}
-    >
-      <Text
-        variant={variant}
-        tone={disabled ? 'disabled' : tone}
-        style={underline ? styles.underline : undefined}
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled}
+        hitSlop={HIT_SLOP}
+        onFocus={() => {
+          setFocused(true);
+        }}
+        onBlur={() => {
+          setFocused(false);
+        }}
+        style={({ pressed }) => [
+          styles.frame,
+          pressed && styles.pressed,
+          disabled && styles.disabled,
+          style,
+        ]}
+        accessibilityRole="link"
+        accessibilityLabel={label}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled }}
       >
-        {label}
-      </Text>
-      <FocusRing visible={isFocused && !disabled} radius="md" />
-    </Pressable>
+        <Text
+          variant={variant}
+          tone={disabled ? 'disabled' : tone}
+          style={underline ? styles.underline : undefined}
+        >
+          {label}
+        </Text>
+        <FocusRing visible={isFocused && !disabled} radius="md" />
+      </Pressable>
+    </Animated.View>
   );
 }

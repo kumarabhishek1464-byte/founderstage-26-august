@@ -30,6 +30,7 @@ import {
   AppHeader,
   DESTINATION_ORDER,
   DESTINATIONS,
+  HeaderScrollProvider,
   NavItem,
   SideRail,
   TabBar,
@@ -55,7 +56,7 @@ export default function TabsLayout() {
   ));
 
   return (
-    <>
+    <HeaderScrollProvider>
       {/* Outside `Tabs`, so it does not participate in the tab transition. The application's identity
           is not a per-screen element. */}
       <AppHeader />
@@ -80,6 +81,6 @@ export default function TabsLayout() {
           </>
         )}
       </Tabs>
-    </>
+    </HeaderScrollProvider>
   );
 }

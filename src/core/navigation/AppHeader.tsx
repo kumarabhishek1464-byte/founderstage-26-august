@@ -28,12 +28,18 @@
  */
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar, IconButton, Text } from '@/core/design-system';
 
 import { hiddenFromAssistiveTech } from '../design-system/a11y';
 import { createStyles, useTheme } from '../design-system/theme';
+import { HAIRLINE_REVEAL, useHeaderScrollY } from './header-scroll';
 
 /**
  * The signed-in founder. Hardcoded while the app is a shell — this is the seam a session/profile
@@ -51,8 +57,23 @@ const VIEWER = {
 const useStyles = createStyles((t) => ({
   chrome: {
     backgroundColor: t.colors.surface.primary,
-    borderBottomWidth: t.border.hairline,
-    borderBottomColor: t.colors.border.subtle,
+    // No static border. The hairline is drawn as an absolute-positioned line whose opacity is
+    // driven by the scroll signal — see `hairline` below.
+  },
+  /**
+   * The hairline that separates chrome from content. Absolute-positioned so that its opacity can
+   * animate without reflowing anything above or below it, and drawn at the bottom of the chrome
+   * so the transition sits exactly where a static border used to be. Height is `hairline` — 1
+   * physical pixel at all densities — because a hairline that grows on a 3x device is a line, not
+   * a hairline.
+   */
+  hairline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: t.border.hairline,
+    backgroundColor: t.colors.border.subtle,
   },
   row: {
     height: t.size.chrome,
@@ -117,6 +138,17 @@ export function AppHeader() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  /**
+   * The scroll signal that drives the hairline. Fades from invisible at the very top of a screen
+   * to fully visible past `HAIRLINE_REVEAL` — the same effect a native `LargeTitle` header uses
+   * to signal "there is content underneath this bar". Clamped both ways: a bouncy overscroll must
+   * not push the hairline into negative opacity, and an aggressive fling must not push it above 1.
+   */
+  const scrollY = useHeaderScrollY();
+  const hairlineStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, HAIRLINE_REVEAL], [0, 1], Extrapolation.CLAMP),
+  }));
 
   return (
     <View style={[styles.chrome, { paddingTop: insets.top }]}>
@@ -184,6 +216,10 @@ export function AppHeader() {
           </View>
         </View>
       </View>
+
+      {/* Absolute-positioned so it does not push content, and rendered *last* so it sits above the
+          chrome's background rather than being clipped by it. */}
+      <Animated.View style={[styles.hairline, hairlineStyle]} pointerEvents="none" />
     </View>
   );
 }

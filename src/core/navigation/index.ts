@@ -13,6 +13,12 @@
  */
 export { AppHeader } from './AppHeader';
 export { DestinationPlaceholder } from './DestinationPlaceholder';
+export {
+  HAIRLINE_REVEAL,
+  HeaderScrollProvider,
+  useHeaderScrollHandler,
+  useHeaderScrollY,
+} from './header-scroll';
 export { NavItem } from './NavItem';
 export { ScreenHeader } from './ScreenHeader';
 export { SideRail } from './SideRail';
