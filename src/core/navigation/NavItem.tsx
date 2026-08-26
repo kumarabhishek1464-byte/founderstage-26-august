@@ -38,7 +38,7 @@
  * handed through a slot that flattens.
  */
 import { useCallback, useState } from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Icon, Text } from '@/core/design-system';
 import { haptic } from '@/core/haptics';
@@ -115,15 +115,47 @@ const useStyles = createStyles((t) => ({
   },
   railHovered: { backgroundColor: t.colors.surface.secondary },
   railPressed: { backgroundColor: t.colors.action.tertiaryPressed },
+  /**
+   * The one red pixel on the entire bottom bar. Sits below the active tab's label as a tiny
+   * `#E53935` dot — the design language's "red is a signal, not a surface" rule taken to its
+   * literal minimum. Every other cue (near-black tone on the glyph and label, faint grey on the
+   * others) already says which tab is current; this is the confirmation, not the carrier.
+   *
+   * `spacing.xxs` (4pt) rather than a literal number because a bump in the spacing scale should
+   * rescale the dot with everything else — a mark that stays 4 while the rest of the bar breathes
+   * to 6 would suddenly look small.
+   */
+  activeDot: {
+    width: t.spacing.xxs,
+    height: t.spacing.xxs,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.action.primary,
+  },
+  /**
+   * Reserved slot the same size as `activeDot`, kept in the layout for every inactive tab so the
+   * icon and label sit at the same vertical position regardless of which tab is current — swapping
+   * a rendered dot in and out otherwise nudges the label by 4pt on every navigation.
+   */
+  activeDotPlaceholder: {
+    width: t.spacing.xxs,
+    height: t.spacing.xxs,
+  },
 }));
 
 /**
- * Active is `text.heading` in both orientations; inactive is `text.tertiary` and lifts one step
- * while a pointer or finger is on it. Stated as a function rather than three nested ternaries at the
- * call site because both the glyph and the label need the same answer.
+ * Active is `text.heading` in both orientations — the same near-black the shell's own type uses,
+ * so the current tab reads as "the one you are on" rather than "the one lit up in the CTA colour".
+ * Inactive rests at `text.secondary` and lifts to `text.heading` while a pointer or finger is on
+ * it, so a tab that is not current still signals its own affordance without pretending to be
+ * chosen. Stated as a function rather than three nested ternaries at the call site because both
+ * the glyph and the label need the same answer.
+ *
+ * The red accent used to live here, and it has moved to the 4pt `activeDot` beneath the label:
+ * one signal pixel is the design language's rule, and painting five tabs in tonal grey with one
+ * red dot underneath is the way that rule lands quietly.
  */
 function resolveTone(isActive: boolean, isEngaged: boolean): Tone {
-  if (isActive) return 'accent';
+  if (isActive) return 'heading';
   return isEngaged ? 'heading' : 'secondary';
 }
 
@@ -206,12 +238,16 @@ export function NavItem({
           {label}
         </Text>
       ) : (
-        // `numberOfLines` rather than trusting the abbreviation table: a system font scale of 200%
-        // will overflow 64pt whatever the string says, and one clipped line is legible where two
-        // wrapped lines would push the glyph out of the 56pt bar.
-        <Text variant="caption" tone={tone} numberOfLines={1}>
-          {barLabel(destination)}
-        </Text>
+        <>
+          {/* `numberOfLines` rather than trusting the abbreviation table: a system font scale of 200%
+              will overflow 64pt whatever the string says, and one clipped line is legible where two
+              wrapped lines would push the glyph out of the 56pt bar. */}
+          <Text variant="caption" tone={tone} numberOfLines={1}>
+            {barLabel(destination)}
+          </Text>
+          {/* Same slot on every tab, empty until this one is current — see `activeDotPlaceholder`. */}
+          <View style={isActive ? styles.activeDot : styles.activeDotPlaceholder} />
+        </>
       )}
       {/**
        * Not wrapped in a spacing element. `FocusRing` is absolutely positioned, so Yoga treats it the

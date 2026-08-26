@@ -98,11 +98,15 @@ const useStyles = createStyles((t) => ({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: t.size.iconSm * 0.75,
-    height: t.size.iconSm * 0.75,
+    // Smaller and quieter than a standard status pip. On a 32pt avatar the mark is meant to be
+    // registered on a second look, not on the first — a plane of white ink around it would be
+    // the loudest thing on the header, which it must not be. `border.hairline` is a single
+    // physical pixel, which is enough to separate the green from the photo underneath.
+    width: t.size.iconSm * 0.65,
+    height: t.size.iconSm * 0.65,
     borderRadius: t.radius.full,
     backgroundColor: t.colors.status.success,
-    borderWidth: t.border.focus,
+    borderWidth: t.border.hairline,
     borderColor: t.colors.surface.primary,
   },
   nameBlock: { flexShrink: 1 },
@@ -114,22 +118,25 @@ const useStyles = createStyles((t) => ({
   },
   badgeWrap: { position: 'relative' },
   /**
-   * `minWidth` rather than `width`, so a two-digit count widens the pill instead of clipping. The
-   * offsets put it over the glyph's top-right corner: the button is 40 and the glyph 20 centred, so
-   * 10/10 is the corner and 4 pulls the badge just outside it.
+   * The unread signal. Replaced a numeric red pill: two of those side by side on a 56pt bar was
+   * the loudest thing on the shell, and the count itself was already redundant — the screen it
+   * opens spells it out in full. What remains is a single 8pt dot with a hairline halo, the
+   * shape a wristwatch or a Circle-by-CRED bell uses to say "there is something in here".
+   *
+   * Offsets place it exactly on the glyph's top-right corner: the button is 40 and the glyph 24
+   * centred, so 8/8 lands on the corner and the halo reads against both the glyph and the white
+   * chrome underneath.
    */
-  badge: {
+  unreadDot: {
     position: 'absolute',
-    top: t.spacing.xxs,
-    right: t.spacing.xxs,
-    minWidth: t.size.iconSm,
-    height: t.size.iconSm,
+    top: t.spacing.xs,
+    right: t.spacing.xs,
+    width: t.spacing.xs,
+    height: t.spacing.xs,
     borderRadius: t.radius.full,
     backgroundColor: t.colors.action.primary,
-    borderWidth: t.border.focus,
+    borderWidth: t.border.hairline,
     borderColor: t.colors.surface.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 }));
 
@@ -192,11 +199,9 @@ export function AppHeader() {
                 router.push('/notifications');
               }}
             />
-            <View style={styles.badge} {...hiddenFromAssistiveTech(true)}>
-              <Text variant="overline" tone="inverse">
-                {String(VIEWER.notifications)}
-              </Text>
-            </View>
+            {VIEWER.notifications > 0 ? (
+              <View style={styles.unreadDot} {...hiddenFromAssistiveTech(true)} />
+            ) : null}
           </View>
 
           <View style={styles.badgeWrap}>
@@ -208,11 +213,9 @@ export function AppHeader() {
                 router.push('/chat');
               }}
             />
-            <View style={styles.badge} {...hiddenFromAssistiveTech(true)}>
-              <Text variant="overline" tone="inverse">
-                {String(VIEWER.messages)}
-              </Text>
-            </View>
+            {VIEWER.messages > 0 ? (
+              <View style={styles.unreadDot} {...hiddenFromAssistiveTech(true)} />
+            ) : null}
           </View>
         </View>
       </View>
