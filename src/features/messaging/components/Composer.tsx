@@ -33,6 +33,14 @@ interface ComposerProps {
   readonly replyToLabel: string;
   readonly onClearReply?: () => void;
   readonly disabled?: boolean;
+  /** Placeholder shown inside the input pill. Defaults to `"Message"`. */
+  readonly placeholder?: string;
+  /**
+   * Group variant: renders the mic and the send button side-by-side at all times rather than
+   * swapping one for the other. The reference draws the group composer this way; the direct
+   * thread keeps the swap behaviour by leaving this unset.
+   */
+  readonly alwaysShowSend?: boolean;
 }
 
 const useStyles = createStyles((t) => ({
@@ -77,6 +85,8 @@ export function Composer({
   replyToLabel,
   onClearReply,
   disabled = false,
+  placeholder = 'Message',
+  alwaysShowSend = false,
 }: ComposerProps) {
   const styles = useStyles();
 
@@ -127,7 +137,7 @@ export function Composer({
             <MessageInput
               value={value}
               onChangeText={onChangeText}
-              placeholder="Message"
+              placeholder={placeholder}
               accessibilityLabel="Message"
               accessibilityHint="Type a message and tap send"
             />
@@ -140,7 +150,23 @@ export function Composer({
           </Stack>
         </Bubble>
 
-        {canSend ? (
+        {alwaysShowSend ? (
+          <>
+            <IconButton
+              name="mic"
+              tone="heading"
+              accessibilityLabel="Record voice message"
+              onPress={onMic ?? noop}
+            />
+            <IconButton
+              name="send"
+              tone="accent"
+              accessibilityLabel="Send message"
+              onPress={handleSend}
+              disabled={!canSend}
+            />
+          </>
+        ) : canSend ? (
           <IconButton
             name="send"
             tone="accent"

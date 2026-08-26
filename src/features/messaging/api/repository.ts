@@ -78,6 +78,8 @@ export interface ReactionDTO {
 export interface ReplyContextDTO {
   readonly seq: number;
   readonly sender_id: string | null;
+  /** The named author of the replied-to message. Populated for group threads. */
+  readonly sender_name?: string | null;
   readonly body: string;
   readonly deleted: boolean;
 }
@@ -86,6 +88,13 @@ export interface ThreadMessageDTO {
   readonly id: string;
   readonly seq: number;
   readonly sender_id: string | null;
+  /**
+   * Display name of the message's sender. In direct chats this is null for the caller's own
+   * messages and always resolves through the header for the partner. In group chats it is the
+   * per-message chrome that appears above each incoming bubble.
+   */
+  readonly sender_name?: string | null;
+  readonly sender_avatar_url?: string | null;
   readonly kind: 'text' | 'attachment' | 'voice' | 'system';
   readonly body: string;
   readonly created_at: string;
@@ -108,13 +117,39 @@ export interface ThreadPartnerDTO {
   readonly presence: 'online' | 'offline' | 'unknown';
 }
 
+/**
+ * One participant of a group conversation, as returned inside a `ThreadPageDTO`. Populated only
+ * when `conversation.type === 'group'`; the direct chat surface reads `partner` instead.
+ */
+export interface ThreadMemberDTO {
+  readonly user_id: string;
+  readonly name: string;
+  readonly avatar_url: string | null;
+  readonly presence: 'online' | 'offline' | 'unknown';
+}
+
+/**
+ * The pinned message strip at the top of a group thread. Rendered when non-null; the strip taps
+ * through to the message body in the timeline.
+ */
+export interface PinnedMessageDTO {
+  readonly seq: number;
+  readonly body: string;
+  readonly author_name: string;
+}
+
 export interface ThreadPageDTO {
   readonly me_user_id: string;
   readonly partner: ThreadPartnerDTO | null;
+  readonly members?: readonly ThreadMemberDTO[];
+  readonly member_count?: number;
+  readonly online_count?: number;
+  readonly pinned_message?: PinnedMessageDTO | null;
   readonly conversation: {
     readonly id: string;
     readonly type: 'direct' | 'group';
     readonly title: string | null;
+    readonly avatar_url?: string | null;
     readonly last_seq: number;
   };
   readonly last_read_seq: number;
