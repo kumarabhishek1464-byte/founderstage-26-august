@@ -1,6 +1,6 @@
 /**
- * The messaging repository. Everything the inbox screen learns about the backend goes through
- * exactly these four calls; nothing else in the feature reaches the Supabase client.
+ * The messaging repository. Every table read and every mutation the messaging surface performs is
+ * one of these calls; nothing else in the feature reaches the Supabase client.
  *
  * ## Why every read is an RPC and not a table select
  *
@@ -56,6 +56,88 @@ export interface InboxItemDTO {
   readonly member_count: number;
 }
 
+/**
+ * File attachment metadata carried on `messaging_messages.attachment`. The `storage_path` is empty
+ * for seeded content and populated when a real upload flow lands.
+ */
+export interface AttachmentDTO {
+  readonly name: string;
+  readonly size: number;
+  readonly mime: string;
+  readonly storage_path?: string;
+  readonly thumbnail_url?: string;
+}
+
+export interface ReactionDTO {
+  readonly emoji: string;
+  readonly count: number;
+  /** Whether the current viewer reacted with this emoji — used to render the pill as selected. */
+  readonly mine: boolean;
+}
+
+export interface ReplyContextDTO {
+  readonly seq: number;
+  readonly sender_id: string | null;
+  readonly body: string;
+  readonly deleted: boolean;
+}
+
+export interface ThreadMessageDTO {
+  readonly id: string;
+  readonly seq: number;
+  readonly sender_id: string | null;
+  readonly kind: 'text' | 'attachment' | 'voice' | 'system';
+  readonly body: string;
+  readonly created_at: string;
+  readonly edited_at: string | null;
+  readonly deleted: boolean;
+  readonly reply_to_seq: number | null;
+  readonly reply_to: ReplyContextDTO | null;
+  readonly reactions: readonly ReactionDTO[];
+  readonly attachment: AttachmentDTO | null;
+  /** Optimistic-only. `true` while a mutation is in flight; cleared once the server confirms. */
+  readonly pending?: boolean;
+  /** Optimistic-only. Set when the send mutation errored so the UI can offer a retry. */
+  readonly failed?: boolean;
+}
+
+export interface ThreadPartnerDTO {
+  readonly user_id: string;
+  readonly name: string;
+  readonly avatar_url: string | null;
+  readonly presence: 'online' | 'offline' | 'unknown';
+}
+
+export interface ThreadPageDTO {
+  readonly me_user_id: string;
+  readonly partner: ThreadPartnerDTO | null;
+  readonly conversation: {
+    readonly id: string;
+    readonly type: 'direct' | 'group';
+    readonly title: string | null;
+    readonly last_seq: number;
+  };
+  readonly last_read_seq: number;
+  readonly has_more: boolean;
+  readonly messages: readonly ThreadMessageDTO[];
+}
+
+/**
+ * The `messaging_send_message` RPC returns the newly-persisted row, so the optimistic slot in the
+ * cache can be reconciled against a real id and a real seq in one round-trip. `attachment` and
+ * `reply_to_seq` mirror the arguments the caller supplied.
+ */
+export interface SentMessageDTO {
+  readonly id: string;
+  readonly seq: number;
+  readonly sender_id: string;
+  readonly kind: 'text' | 'attachment' | 'voice';
+  readonly body: string;
+  readonly created_at: string;
+  readonly reply_to_seq: number | null;
+  readonly attachment: AttachmentDTO | null;
+}
+
 export const messagingRepository = {
   /**
    * Fetches the caller's inbox. Empty list is a valid, first-class result — the RPC returns
@@ -64,7 +146,6 @@ export const messagingRepository = {
   inbox: createRepositoryQuery('messaging.inbox', async (): Promise<readonly InboxItemDTO[]> => {
     const { data, error } = await supabase.rpc('messaging_inbox_list');
     if (error !== null) throw error;
-    // The RPC signature returns `jsonb`, which supabase-js hands back as `unknown`.
     return (data as readonly InboxItemDTO[] | null) ?? [];
   }),
 
@@ -79,7 +160,7 @@ export const messagingRepository = {
 
   /**
    * Bumps this member's read watermark for one conversation. The RPC uses `greatest()` so a slow
-   * retry cannot un-read anything — see the `Message.seq` docblock for the ordering argument.
+   * retry cannot un-read anything.
    */
   markRead: createRepositoryQuery(
     'messaging.markRead',
@@ -87,6 +168,65 @@ export const messagingRepository = {
       const { error } = await supabase.rpc('messaging_mark_read', {
         cid: input.conversationId,
         up_to_seq: input.upToSeq,
+      });
+      if (error !== null) throw error;
+    }
+  ),
+
+  /**
+   * Fetches one page of a conversation's messages, newest-page-first when `beforeSeq` is null.
+   * The RPC also returns partner info, my read watermark and a `has_more` flag so the client can
+   * render the whole surface in one round-trip.
+   */
+  threadPage: createRepositoryQuery(
+    'messaging.threadPage',
+    async (input: {
+      readonly conversationId: string;
+      readonly beforeSeq: number | null;
+      readonly limit: number;
+    }): Promise<ThreadPageDTO> => {
+      const { data, error } = await supabase.rpc('messaging_thread_page', {
+        cid: input.conversationId,
+        before_seq: input.beforeSeq,
+        limit_in: input.limit,
+      });
+      if (error !== null) throw error;
+      return data as unknown as ThreadPageDTO;
+    }
+  ),
+
+  /**
+   * Sends a text message. The RPC allocates the next `seq` atomically under the conversation's
+   * row lock, so a concurrent send from the same user (double-tap on Send, replay after a network
+   * blip) cannot collide.
+   */
+  sendMessage: createRepositoryQuery(
+    'messaging.sendMessage',
+    async (input: {
+      readonly conversationId: string;
+      readonly body: string;
+      readonly replyToSeq: number | null;
+    }): Promise<SentMessageDTO> => {
+      const { data, error } = await supabase.rpc('messaging_send_message', {
+        cid: input.conversationId,
+        body_in: input.body,
+        reply_to_seq_in: input.replyToSeq,
+      });
+      if (error !== null) throw error;
+      return data as unknown as SentMessageDTO;
+    }
+  ),
+
+  /**
+   * Toggles one emoji reaction on a message for the current viewer. Idempotent server-side, so a
+   * duplicate tap is a safe no-op.
+   */
+  toggleReaction: createRepositoryQuery(
+    'messaging.toggleReaction',
+    async (input: { readonly messageId: string; readonly emoji: string }): Promise<void> => {
+      const { error } = await supabase.rpc('messaging_toggle_reaction', {
+        msg_id: input.messageId,
+        emoji_in: input.emoji,
       });
       if (error !== null) throw error;
     }

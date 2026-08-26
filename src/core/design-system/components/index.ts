@@ -31,6 +31,7 @@
  */
 export { Avatar } from './Avatar';
 export { Banner } from './Banner';
+export { Bubble } from './Bubble';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';
@@ -41,6 +42,7 @@ export { FilterBar } from './FilterBar';
 export { Icon } from './Icon';
 export { IconButton } from './IconButton';
 export { Marquee } from './Marquee';
+export { MessageInput } from './MessageInput';
 export { ProgressSteps } from './ProgressSteps';
 export { Screen } from './Screen';
 export { Select } from './Select';
@@ -60,8 +62,9 @@ export { PaginationDots } from './PaginationDots';
 export { ShieldLogoIcon } from './ShieldLogoIcon';
 export { Wordmark } from './Wordmark';
 
-export type { AvatarSize } from './Avatar';
+export type { AvatarPresence, AvatarSize } from './Avatar';
 export type { BannerTone } from './Banner';
+export type { BubbleBackground, BubbleRadius } from './Bubble';
 export type { ButtonShape, ButtonSize, ButtonVariant } from './Button';
 export type { CardPadding } from './Card';
 export type { ChipSize } from './Chip';
@@ -71,6 +74,7 @@ export type { IconName, IconSize } from './Icon';
 export type { IconButtonSize } from './IconButton';
 export type { MarqueeDirection } from './Marquee';
 export type { ScreenSurface } from './Screen';
+export type { SheetRef } from './Sheet';
 export type { SelectOption } from './Select';
 export type { SkeletonRadius } from './Skeleton';
 export type { SpinnerSize, SpinnerTone } from './Spinner';

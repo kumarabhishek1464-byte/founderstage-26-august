@@ -75,6 +75,24 @@ export interface Database {
         Args: { cid: string; up_to_seq: number };
         Returns: void;
       };
+      readonly messaging_thread_page: {
+        Args: { cid: string; before_seq: number | null; limit_in: number };
+        Returns: Json;
+      };
+      readonly messaging_send_message: {
+        Args: {
+          cid: string;
+          body_in: string;
+          reply_to_seq_in: number | null;
+          attachment_in?: Json | null;
+          kind_in?: 'text' | 'attachment' | 'voice';
+        };
+        Returns: Json;
+      };
+      readonly messaging_toggle_reaction: {
+        Args: { msg_id: string; emoji_in: string };
+        Returns: void;
+      };
     };
     readonly Enums: Record<never, string>;
     readonly CompositeTypes: Record<never, Record<string, unknown>>;

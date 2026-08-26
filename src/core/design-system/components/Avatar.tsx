@@ -43,6 +43,13 @@ import type { IconSize } from './Icon';
 
 export type AvatarSize = 'sm' | 'md' | 'lg';
 
+/**
+ * Optional presence dot in the avatar's bottom-right corner. `online` paints a small green disc with
+ * a white ring so it separates from any background; `undefined` (the default) draws nothing, so the
+ * plate is unchanged for the many surfaces that do not carry presence.
+ */
+export type AvatarPresence = 'online';
+
 interface AvatarProps {
   /**
    * Image URI. A plain string rather than `expo-image`'s `ImageSource`, so the image library stays
@@ -57,6 +64,12 @@ interface AvatarProps {
    */
   readonly name?: string;
   readonly size?: AvatarSize;
+  /**
+   * Draws a small status disc at the bottom-right. Set on the messaging thread header and the
+   * conversation row. Absent everywhere else — profile screens, mentions, comments — so an existing
+   * caller does not change shape.
+   */
+  readonly presence?: AvatarPresence;
   readonly accessibilityLabel?: string;
   readonly style?: StyleProp<ViewStyle>;
 }
@@ -129,10 +142,62 @@ const useStyles = createStyles((t) => {
     // than under it — a photo bleeding over the border makes the circle look unclipped on Android,
     // where `overflow: 'hidden'` and a border interact badly.
     photo: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+
+    /**
+     * The presence disc. Sized to about a fifth of the avatar's diameter — big enough to notice at
+     * a glance, small enough not to eclipse the picture. The white ring is the surface underneath
+     * showing through, which is why the container carries no background of its own.
+     */
+    presenceOnlineSm: {
+      position: 'absolute',
+      right: -t.border.thin,
+      bottom: -t.border.thin,
+      width: t.spacing.xs,
+      height: t.spacing.xs,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.status.success,
+      borderWidth: t.border.thin,
+      borderColor: t.colors.surface.primary,
+    },
+    presenceOnlineMd: {
+      position: 'absolute',
+      right: -t.border.thin,
+      bottom: -t.border.thin,
+      width: t.spacing.sm,
+      height: t.spacing.sm,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.status.success,
+      borderWidth: t.border.thin,
+      borderColor: t.colors.surface.primary,
+    },
+    presenceOnlineLg: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      width: t.spacing.md,
+      height: t.spacing.md,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.status.success,
+      borderWidth: t.border.thin,
+      borderColor: t.colors.surface.primary,
+    },
   };
 });
 
-export function Avatar({ source, name, size = 'md', accessibilityLabel, style }: AvatarProps) {
+const PRESENCE_ONLINE_STYLE = {
+  sm: 'presenceOnlineSm',
+  md: 'presenceOnlineMd',
+  lg: 'presenceOnlineLg',
+} as const;
+
+export function Avatar({
+  source,
+  name,
+  size = 'md',
+  presence,
+  accessibilityLabel,
+  style,
+}: AvatarProps) {
   const styles = useStyles();
   // Only for the transition duration: `expo-image` takes milliseconds as a prop, not a style, so
   // `createStyles` cannot carry it and the token has to be read off the theme directly.
@@ -168,6 +233,9 @@ export function Avatar({ source, name, size = 'md', accessibilityLabel, style }:
           accessible={false}
         />
       )}
+      {presence === 'online' ? (
+        <View style={styles[PRESENCE_ONLINE_STYLE[size]]} {...hiddenFromAssistiveTech(true)} />
+      ) : null}
     </View>
   );
 }

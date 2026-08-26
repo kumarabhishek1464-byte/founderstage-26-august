@@ -213,7 +213,7 @@ export default function ChatScreen() {
                 key={item.id}
                 item={item}
                 onPress={(id) => {
-                  router.push(`/chat?id=${id}`);
+                  router.push(`/chat/${id}`);
                 }}
               />
             ))}
@@ -235,7 +235,7 @@ export default function ChatScreen() {
                   key={item.id}
                   item={item}
                   onPress={(id) => {
-                    router.push(`/chat?id=${id}`);
+                    router.push(`/chat/${id}`);
                   }}
                 />
               ))}

@@ -40,6 +40,7 @@ import Bookmark from 'lucide-react-native/icons/bookmark';
 import Briefcase from 'lucide-react-native/icons/briefcase';
 import Building2 from 'lucide-react-native/icons/building-2';
 import Check from 'lucide-react-native/icons/check';
+import CheckCheck from 'lucide-react-native/icons/check-check';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
@@ -58,10 +59,15 @@ import Link from 'lucide-react-native/icons/link';
 import Lock from 'lucide-react-native/icons/lock';
 import Mail from 'lucide-react-native/icons/mail';
 import MapPin from 'lucide-react-native/icons/map-pin';
+import Mic from 'lucide-react-native/icons/mic';
 import MessageCircle from 'lucide-react-native/icons/message-circle';
 import ChartColumn from 'lucide-react-native/icons/chart-column';
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
+import CornerUpLeft from 'lucide-react-native/icons/corner-up-left';
+import Copy from 'lucide-react-native/icons/copy';
 import Ellipsis from 'lucide-react-native/icons/ellipsis';
+import FileText from 'lucide-react-native/icons/file-text';
+import Flag from 'lucide-react-native/icons/flag';
 import EllipsisVertical from 'lucide-react-native/icons/ellipsis-vertical';
 import Phone from 'lucide-react-native/icons/phone';
 import Pin from 'lucide-react-native/icons/pin';
@@ -70,10 +76,12 @@ import SquarePen from 'lucide-react-native/icons/square-pen';
 import Plus from 'lucide-react-native/icons/plus';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
 import Search from 'lucide-react-native/icons/search';
+import Send from 'lucide-react-native/icons/send';
 import Settings from 'lucide-react-native/icons/settings';
 import Share2 from 'lucide-react-native/icons/share-2';
 import ShieldCheck from 'lucide-react-native/icons/shield-check';
 import ShoppingBag from 'lucide-react-native/icons/shopping-bag';
+import Smile from 'lucide-react-native/icons/face-slightly-smiling';
 import Sparkles from 'lucide-react-native/icons/sparkles';
 import TrendingUp from 'lucide-react-native/icons/trending-up';
 import ThumbsUp from 'lucide-react-native/icons/thumbs-up';
@@ -81,6 +89,7 @@ import TriangleAlert from 'lucide-react-native/icons/triangle-alert';
 import Upload from 'lucide-react-native/icons/upload';
 import User from 'lucide-react-native/icons/user';
 import Users from 'lucide-react-native/icons/users';
+import Video from 'lucide-react-native/icons/video';
 import X from 'lucide-react-native/icons/x';
 
 import { hiddenFromAssistiveTech } from '../a11y';
@@ -120,11 +129,21 @@ const REGISTRY = {
   error: CircleAlert,
   info: Info,
   check: Check,
+  /** Double-tick read-receipt in the chat message footer. */
+  checks: CheckCheck,
   /** A guarantee rather than an outcome: "your details are encrypted", "we review this". */
   verified: ShieldCheck,
 
   // Actions and destinations
   add: Plus,
+  /** The primary composer action once a text run is present — the paper-plane glyph. */
+  send: Send,
+  /** Voice-note affordance in the composer, replaced by `send` once text is typed. */
+  mic: Mic,
+  /** Emoji-picker affordance in the composer. */
+  emoji: Smile,
+  /** Video-call action in the thread header. */
+  video: Video,
   search: Search,
   refresh: RefreshCw,
   upload: Upload,
@@ -148,6 +167,12 @@ const REGISTRY = {
    * not a synonym.
    */
   moreVertical: EllipsisVertical,
+
+  /** Chat surface: attachment plate, message actions, moderation. */
+  document: FileText,
+  reply: CornerUpLeft,
+  copy: Copy,
+  flag: Flag,
   sparkles: Sparkles,
 
   /**
